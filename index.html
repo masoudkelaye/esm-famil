@@ -426,8 +426,34 @@ async function loginGuest(){
   afterLogin();
 }
 function afterLogin(){updateProfileUI();const up=new URLSearchParams(window.location.search);if(up.get('room')){$('i-code').value=up.get('room').toUpperCase();toast('کد اتاق: '+up.get('room'));}show('s-home');}
-function showGuestJoin(){$('landing-join').style.display='block';$('guest-name').focus();}
-function joinFromLink(){const n=$('guest-name').value.trim();if(!n){toast('اسمت رو بنویس!');return;}myName=n;isGuest=true;localStorage.setItem('esm_name',n);localStorage.setItem('esm_logged_in','guest');if(firebaseReady&&!currentUser)fbAuth.signInAnonymously().catch(()=>{});updateProfileUI();joinOnline();}
+function showGuestJoin(){
+  $('landing-join').style.display='block';
+  const up=new URLSearchParams(window.location.search);
+  const roomCode=up.get('room');
+  if(roomCode){
+    $('i-code').value=roomCode.toUpperCase();
+    // Show room code in the landing page
+    const div=$('landing-join').querySelector('.div');
+    if(div)div.textContent='📩 دعوت به اتاق: '+roomCode.toUpperCase();
+  }
+  setTimeout(()=>$('guest-name').focus(),100);
+}
+function joinFromLink(){
+  const n=$('guest-name').value.trim();
+  if(!n){toast('اسمت رو بنویس!');return;}
+  myName=n;isGuest=true;
+  localStorage.setItem('esm_name',n);
+  localStorage.setItem('esm_logged_in','guest');
+  
+  // Set room code from URL
+  const up=new URLSearchParams(window.location.search);
+  const roomCode=up.get('room');
+  if(roomCode)$('i-code').value=roomCode.toUpperCase();
+  
+  if(firebaseReady&&!currentUser)fbAuth.signInAnonymously().catch(()=>{});
+  updateProfileUI();
+  joinOnline();
+}
 function doLogout(){if(fbAuth)fbAuth.signOut();currentUser=null;isGuest=true;myName='';localStorage.removeItem('esm_logged_in');show('s-landing');}
 
 // === HISTORY ===
