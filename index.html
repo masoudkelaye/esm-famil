@@ -118,6 +118,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,Arial,sans-s
 .at2{display:block}.st2{display:block;font-weight:700;color:var(--p2);font-size:12px}
 .rf{padding:16px;flex-shrink:0;display:flex;flex-direction:column;align-items:center}
 .rf .btn{max-width:500px}
+.room-footer{padding:16px 20px;padding-bottom:max(20px,env(safe-area-inset-bottom));flex-shrink:0;display:flex;justify-content:center;background:var(--bg2);border-top:1px solid var(--bdr)}
+.room-footer .btn{max-width:500px;width:100%}
 .fc{font-size:80px;margin-bottom:16px;animation:float 2s infinite}.fw{font-size:30px;font-weight:900;color:#fff;margin-bottom:8px}.fs{font-size:16px;color:rgba(255,255,255,.7);margin-bottom:24px}
 .fb{flex:1;padding:20px;display:flex;flex-direction:column;align-items:center;overflow-y:auto;width:100%}
 .fp{display:flex;align-items:center;justify-content:space-between;padding:14px 0;width:100%}
@@ -304,8 +306,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,Arial,sans-s
 <div class="pc"><span id="pc-txt">۱ بازیکن</span></div>
 <div class="pcl" id="pl-list"></div>
 <div class="wt" id="w-txt">منتظر بازیکن...</div>
-<button class="btn bg bst" id="b-start" onclick="onlineStart()" style="display:none">🎮 شروع بازی</button>
-</div></div>
+</div>
+<div class="room-footer">
+<button class="btn bg" id="b-start" onclick="onlineStart()" style="display:none">🎮 شروع بازی</button>
+</div>
+</div>
 
 <!-- GAME -->
 <div id="s-game" class="scr">
@@ -571,7 +576,20 @@ function genLink(){$('share-link').value=location.origin+location.pathname+'?roo
 function genQR(){const q=$('qr-code');q.innerHTML='';if(typeof QRCode!=='undefined')try{new QRCode(q,{text:$('share-link').value,width:160,height:160,colorDark:"#7c3aed",colorLight:"#0f0c29",correctLevel:QRCode.CorrectLevel.M});}catch(e){}}
 function copyShareLink(){const l=$('share-link').value;navigator.clipboard?navigator.clipboard.writeText(l).then(()=>toast('کپی شد!')):($('share-link').select(),document.execCommand('copy'),toast('کپی شد!'));}
 function shareVia(p){const l=$('share-link').value,t='🎮 بیا اسم فامیل بازی کنیم!\nکد: '+rCode+'\n'+l,e=encodeURIComponent(t),el=encodeURIComponent(l);switch(p){case'whatsapp':open('https://wa.me/?text='+e);break;case'telegram':open('https://t.me/share/url?url='+el+'&text='+encodeURIComponent('🎮 بیا اسم فامیل! کد: '+rCode));break;case'sms':open('sms:?body='+e);break;case'more':navigator.share?navigator.share({title:'اسم فامیل',text:t,url:l}).catch(()=>{}):copyShareLink();break;}}
-function onlineStart(){if(isHost&&sk){const c=collectCats();const tBtn=document.querySelector('#t-opts .t-opt.sel');const rBtn=document.querySelector('#r-opts .t-opt.sel');sk.emit('start_game',{roomCode:rCode,categories:c,maxRounds:parseInt(rBtn?.dataset.r||5),timePerRound:parseInt(tBtn?.dataset.t||60)});}}
+function onlineStart(){
+  if(!sk||!sk.connected){toast('اتصال برقرار نیست! صبر کن...');return;}
+  if(!isHost){toast('فقط میزبان می‌تونه شروع کنه!');return;}
+  const c=collectCats();
+  const tBtn=document.querySelector('#t-opts .t-opt.sel');
+  const rBtn=document.querySelector('#r-opts .t-opt.sel');
+  sk.emit('start_game',{
+    roomCode:rCode,
+    categories:c,
+    maxRounds:parseInt(rBtn?.dataset.r||5),
+    timePerRound:parseInt(tBtn?.dataset.t||60)
+  });
+  toast('بازی شروع شد!');
+}
 function skipP(pid,n){if(!isHost||!sk)return;if(confirm(n+' از این دور رد بشه؟'))sk.emit('skip_player',{roomCode:rCode,playerId:pid});}
 
 // === GAME ===
