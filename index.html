@@ -12,7 +12,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{--p:#7c3aed;--p2:#a855f7;--g:#10b981;--r:#ef4444;--a:#f59e0b;--bg:#0f0c29;--bg2:#1a1640;--card:rgba(255,255,255,.08);--card2:rgba(255,255,255,.12);--text:#f0f0f0;--tl:rgba(255,255,255,.5);--bdr:rgba(255,255,255,.1);--glow:0 0 30px rgba(124,58,237,.3)}
-html,body{height:100%;overflow:hidden}
+html,body{height:100%;overflow:hidden;overflow-x:hidden;max-width:100vw}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,Arial,sans-serif;background:var(--bg);color:var(--text);direction:rtl;overflow:hidden;-webkit-user-select:none;user-select:none}
 #particles{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
 .scr{display:none;flex-direction:column;height:100vh;height:100dvh;position:fixed;top:0;left:0;right:0;bottom:0;z-index:1;animation:fadeIn .4s ease}.scr.on{display:flex}
@@ -453,13 +453,15 @@ function connectSocket(){
 }
 
 // === CONNECT WITH COUNTDOWN ===
-let connInterval=null;
+let connInterval=null,pendingAction=null;
 function waitForConnection(onSuccess,label){
+  pendingAction=onSuccess;
   show('s-load');$('retry-btn').style.display='none';
+  if(!sk)connectSocket();
   let secs=50;
   clearInterval(connInterval);
   const tick=()=>{
-    if(sk&&sk.connected){clearInterval(connInterval);onSuccess();return;}
+    if(sk&&sk.connected){clearInterval(connInterval);pendingAction=null;onSuccess();return;}
     $('l-txt').textContent=label+' ('+pn(secs)+' ثانیه)';
     secs--;
     if(secs<0){
@@ -473,8 +475,10 @@ function waitForConnection(onSuccess,label){
 }
 function retryConnect(){
   if(connInterval)clearInterval(connInterval);
-  if(sk)sk.connect();
-  show('s-home');
+  if(!sk)connectSocket();
+  else{try{sk.disconnect();}catch(e){}sk.connect();}
+  if(pendingAction){waitForConnection(pendingAction,'در حال اتصال مجدد');}
+  else show('s-home');
 }
 
 // === START ONLINE ===
