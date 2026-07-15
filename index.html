@@ -175,7 +175,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,Arial,sans-s
 .history-item .hi-mode.offline{background:#fef3c7;color:#92400e}
 .history-item .hi-detail{font-size:13px;color:var(--tl)}
 .history-item .hi-score{font-size:18px;font-weight:800;color:var(--p)}
-.conn-status{position:fixed;top:0;left:0;right:0;padding:6px;text-align:center;font-size:12px;font-weight:600;z-index:999;transition:all .3s}
+.conn-status{position:fixed;top:0;left:0;right:0;padding:6px;text-align:center;font-size:12px;font-weight:600;z-index:999;transition:all .3s;display:none}
+.conn-status.visible{display:block}
 .conn-status.ok{background:#d1fae5;color:#065f46;transform:translateY(-100%)}
 .conn-status.bad{background:#fee2e2;color:#991b1b;transform:translateY(0)}
 .reaction-bar{display:flex;justify-content:center;gap:8px;padding:12px;flex-wrap:wrap}
@@ -224,7 +225,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,Arial,sans-s
 <button class="btn bp" onclick="joinFromLink()">🚪 ورود به اتاق</button>
 </div>
 </div>
-<div class="ver">نسخه ۴.۰ | ساخته شده با ❤️</div>
+<div class="ver">نسخه ۴.۰</div>
 </div>
 
 <!-- HOME (after login) -->
@@ -410,10 +411,42 @@ let myReaction=null;
 // === FIREBASE ===
 function initFirebase(){
   try{
-    if(FIREBASE_CONFIG.apiKey==='YOUR_API_KEY'){console.log('Firebase not configured');return;}
+    if(FIREBASE_CONFIG.apiKey==='YOUR_API_KEY'){console.log('Firebase not configured');checkOfflineLogin();return;}
     fbApp=firebase.initializeApp(FIREBASE_CONFIG);fbAuth=firebase.auth();fbDb=firebase.firestore();firebaseReady=true;
-    fbAuth.onAuthStateChanged(user=>{currentUser=user;if(user&&!user.isAnonymous){isGuest=false;}updateProfileUI();if(user)loadGameHistory();});
-  }catch(e){console.log('Firebase error:',e);}
+    fbAuth.onAuthStateChanged(user=>{
+      currentUser=user;
+      if(user&&!user.isAnonymous){
+        isGuest=false;
+        if(!myName||myName==='مهمان'){myName=user.displayName||user.email?.split('@')[0]||'بازیکن';localStorage.setItem('esm_name',myName);}
+        localStorage.setItem('esm_logged_in','google');
+        updateProfileUI();
+        // Auto-redirect to home after refresh
+        if(document.querySelector('#s-landing.on')){afterLogin();}
+      }else if(user&&user.isAnonymous){
+        isGuest=true;
+        const savedName=localStorage.getItem('esm_name');
+        if(savedName&&savedName!=='مهمان'){myName=savedName;}
+        localStorage.setItem('esm_logged_in','guest');
+        updateProfileUI();
+        if(document.querySelector('#s-landing.on')){afterLogin();}
+      }else{
+        // Not logged in
+        localStorage.removeItem('esm_logged_in');
+        checkOfflineLogin();
+      }
+      if(user)loadGameHistory();
+    });
+  }catch(e){console.log('Firebase error:',e);checkOfflineLogin();}
+}
+function checkOfflineLogin(){
+  // If user was logged in as guest (no Firebase), auto-redirect
+  const loginType=localStorage.getItem('esm_logged_in');
+  const savedName=localStorage.getItem('esm_name');
+  if(loginType==='guest'&&savedName){
+    myName=savedName;isGuest=true;
+    updateProfileUI();
+    if(document.querySelector('#s-landing.on')){afterLogin();}
+  }
 }
 function updateProfileUI(){
   const name=myName||currentUser?.displayName||'مهمان';
@@ -424,12 +457,14 @@ function updateProfileUI(){
 }
 async function loginGoogle(){
   if(!firebaseReady){loginGuest();return;}
-  try{const p=new firebase.auth.GoogleAuthProvider();const r=await fbAuth.signInWithPopup(p);myName=r.user.displayName||r.user.email?.split('@')[0]||'بازیکن';isGuest=false;localStorage.setItem('esm_name',myName);afterLogin();}
+  try{const p=new firebase.auth.GoogleAuthProvider();const r=await fbAuth.signInWithPopup(p);myName=r.user.displayName||r.user.email?.split('@')[0]||'بازیکن';isGuest=false;localStorage.setItem('esm_name',myName);localStorage.setItem('esm_logged_in','google');afterLogin();}
   catch(e){if(e.code==='auth/popup-blocked'){toast('پاپ‌آپ مسدود شده!');}else{toast('خطا: '+(e.message||e.code));}}
 }
 async function loginGuest(){
-  myName='مهمان';isGuest=true;
-  if(firebaseReady){try{await fbAuth.signInAnonymously();myName='مهمان_'+Math.random().toString(36).substr(2,4);}catch(e){}}
+  const savedName=localStorage.getItem('esm_name');
+  myName=savedName||('مهمان_'+Math.random().toString(36).substr(2,4));isGuest=true;
+  localStorage.setItem('esm_name',myName);localStorage.setItem('esm_logged_in','guest');
+  if(firebaseReady){try{await fbAuth.signInAnonymously();}catch(e){}}
   afterLogin();
 }
 function afterLogin(){
@@ -456,6 +491,7 @@ function joinFromLink(){
 
 function doLogout(){
   if(fbAuth)fbAuth.signOut();currentUser=null;isGuest=true;myName='';
+  localStorage.removeItem('esm_logged_in');
   show('s-landing');
   const up=new URLSearchParams(window.location.search);if(up.get('room'))showGuestJoin();
 }
@@ -617,13 +653,39 @@ function connectSocket(){
     sk.on('player_skipped',d=>{O.skippedPlayers=d.skippedPlayers||[];toast((d.playerName||'بازیکن')+' این دور رد شد');updRoom();});
   }catch(e){console.log('Socket not available');}
 }
-function updateConnStatus(ok){const el=$('conn-status');if(ok){el.className='conn-status ok';el.textContent='';}else{el.className='conn-status bad';el.textContent='⚠️ اتصال قطع - تلاش مجدد...';}}
+function updateConnStatus(ok){
+  const el=$('conn-status');
+  // Only show connection status when in a game/room
+  const inGame=document.querySelector('#s-room.on, #s-game.on, #s-wait.on, #s-res.on, #s-load.on, #s-fin.on');
+  if(!inGame){el.classList.remove('visible');return;}
+  el.classList.add('visible');
+  if(ok){el.className='conn-status visible ok';el.textContent='';}
+  else{el.className='conn-status visible bad';el.textContent='⚠️ اتصال قطع - تلاش مجدد...';}
+}
 
+let connectCountdown=null;
 function startOnline(){
   if(!myName){toast('لطفاً اسمت رو بنویس!');return;}
   show('s-load');$('l-txt').textContent='در حال ساخت اتاق...';
-  const tryCreate=()=>{if(sk&&sk.connected){const cats=collectCategories();const tBtn=document.querySelector('#t-opts .t-opt.sel');const rBtn=document.querySelector('#r-opts .t-opt.sel');sk.emit('create_room',{playerName:myName,categories:cats,maxRounds:parseInt(rBtn?.dataset.r||5),timePerRound:parseInt(tBtn?.dataset.t||60)});}else{$('l-txt').textContent='در حال اتصال... (۳۰ ثانیه صبر کن)';setTimeout(tryCreate,3000);}};
-  if(!sk){connectSocket();setTimeout(tryCreate,2000);}else tryCreate();
+  let secs=45;
+  clearInterval(connectCountdown);
+  const tryCreate=()=>{
+    if(sk&&sk.connected){
+      clearInterval(connectCountdown);
+      const cats=collectCategories();const tBtn=document.querySelector('#t-opts .t-opt.sel');const rBtn=document.querySelector('#r-opts .t-opt.sel');
+      sk.emit('create_room',{playerName:myName,categories:cats,maxRounds:parseInt(rBtn?.dataset.r||5),timePerRound:parseInt(tBtn?.dataset.t||60)});
+    }else{
+      $('l-txt').textContent='در حال اتصال به سرور... ('+pn(secs)+' ثانیه)';
+      secs--;
+      if(secs<=0){
+        clearInterval(connectCountdown);
+        $('l-txt').textContent='سرور در حال بیدار شدنه... لطفاً دوباره امتحان کن';
+        setTimeout(()=>show('s-home'),2000);
+      }
+    }
+  };
+  if(!sk){connectSocket();connectCountdown=setInterval(tryCreate,2000);}
+  else{connectCountdown=setInterval(tryCreate,1000);}
 }
 function collectCategories(){const cats=[];document.querySelectorAll('.cat-chip.sel').forEach(c=>{const catId=c.dataset.id;let cat=CATS.find(x=>x.id===catId);if(!cat)cat=customCategories.find(x=>x.id===catId);if(cat)cats.push({id:cat.id,name:cat.n||cat.name,icon:cat.i||cat.icon||'📝'});});return cats.length>=3?cats:CATS.filter(c=>['name','family','city','country','food','animal'].includes(c.id));}
 
@@ -631,10 +693,26 @@ function joinOnline(){
   const name=$('i-name').value.trim()||myName;const code=($('i-code').value.trim()||'').toUpperCase();
   if(!name){toast('لطفاً اسمت رو بنویس!');return;}if(!code||code.length<4){toast('کد اتاق رو وارد کن!');return;}
   myName=name;localStorage.setItem('esm_name',name);rCode=code;
-  show('s-load');$('l-txt').textContent='در حال ورود...';
+  show('s-load');
   if(!sk)connectSocket();
-  const tryJoin=()=>{if(sk&&sk.connected){sk.emit('join_room',{roomCode:code,playerName:name});}else{$('l-txt').textContent='در حال اتصال...';setTimeout(tryJoin,3000);}};
-  setTimeout(tryJoin,sk&&sk.connected?100:1500);
+  let secs=45;
+  clearInterval(connectCountdown);
+  const tryJoin=()=>{
+    if(sk&&sk.connected){
+      clearInterval(connectCountdown);
+      $('l-txt').textContent='در حال ورود به اتاق...';
+      sk.emit('join_room',{roomCode:code,playerName:name});
+    }else{
+      $('l-txt').textContent='در حال اتصال به سرور... ('+pn(secs)+' ثانیه)';
+      secs--;
+      if(secs<=0){
+        clearInterval(connectCountdown);
+        $('l-txt').textContent='سرور خوابه... لطفاً ۳۰ ثانیه بعد دوباره امتحان کن';
+        setTimeout(()=>show('s-home'),2000);
+      }
+    }
+  };
+  connectCountdown=setInterval(tryJoin,1000);
 }
 
 function goHome(){if(rCode&&sk){try{sk.emit('leave_room',{roomCode:rCode});}catch(e){}}clearInterval(G.timer);gameMode='';rCode='';myToken='';localStorage.removeItem('esm_room');show('s-home');}
