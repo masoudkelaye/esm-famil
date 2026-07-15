@@ -68,7 +68,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,Arial,sans-s
 .badge{font-size:11px;padding:3px 10px;border-radius:10px;display:inline-block;margin-top:2px;font-weight:600}
 .bh{background:rgba(245,158,11,.2);color:#fbbf24}.by{background:rgba(168,85,247,.2);color:#c084fc}.bgr{background:rgba(16,185,129,.2);color:#34d399}.bred{background:rgba(239,68,68,.2);color:#f87171}
 .wt{text-align:center;color:var(--tl);font-size:14px;padding:16px 0;width:90%;max-width:500px}
-.bst{max-width:90%;width:100%;margin:8px auto;display:block!important}
+.bst{width:90%;max-width:400px;margin:0 auto}
 .gt{background:linear-gradient(135deg,#0f0c29,#302b63);padding:50px 16px 14px;color:#fff;flex-shrink:0;position:relative;overflow:hidden;width:100%}
 .gt::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(circle at 30% 50%,rgba(124,58,237,.2),transparent 60%)}
 .gtr{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1}
@@ -308,7 +308,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,Arial,sans-s
 <div class="wt" id="w-txt">منتظر بازیکن...</div>
 </div>
 <div class="room-footer">
-<button class="btn bg" id="b-start" onclick="onlineStart()" style="display:none">🎮 شروع بازی</button>
+<button class="btn bg bst" id="b-start" onclick="onlineStart()">🎮 شروع بازی</button>
 </div>
 </div>
 
@@ -567,7 +567,7 @@ function updRoom(){
   h+='<div class="pi">';if(isHost&&!me)h+='<button class="pi-remove" onclick="skipP(\''+p.id+'\',\''+p.name+'\')">⏭</button>';
   h+='<div class="pia" style="background:'+cl+'">'+(p.name||'?').charAt(0)+'</div><div class="pii"><div class="pin">'+p.name+(me?' (شما)':'')+'</div><div>'+(host?'<span class="badge bh">میزبان</span> ':'')+(skip?'<span class="skip-badge">رد شده ⏭</span>':'<span class="badge bgr">آماده ✓</span>')+'</div></div></div>';});
   $('pl-list').innerHTML=h;
-  if(isHost){$('b-start').style.display=pArr.length>=2?'block':'none';$('w-txt').textContent=pArr.length>=2?'بازیکن‌ها آماده‌ن!':'منتظر بازیکن...';}
+  if(isHost){$('b-start').style.display='block';$('b-start').disabled=pArr.length<2;$('w-txt').textContent=pArr.length>=2?'بازیکن‌ها آماده‌ن!':'منتظر بازیکن...';}
   else{$('b-start').style.display='none';$('w-txt').textContent='منتظر شروع توسط میزبان...';}
 }
 
