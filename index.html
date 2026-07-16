@@ -69,14 +69,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,Arial,sans-s
 .bh{background:rgba(245,158,11,.2);color:#fbbf24}.by{background:rgba(168,85,247,.2);color:#c084fc}.bgr{background:rgba(16,185,129,.2);color:#34d399}.bred{background:rgba(239,68,68,.2);color:#f87171}
 .wt{text-align:center;color:var(--tl);font-size:14px;padding:16px 0;width:90%;max-width:500px}
 .bst{width:90%;max-width:400px;margin:0 auto}
-.gt{background:linear-gradient(135deg,#0f0c29,#302b63);padding:50px 16px 14px;color:#fff;flex-shrink:0;position:relative;overflow:hidden;width:100%}
+.gt{background:linear-gradient(135deg,#0f0c29,#302b63);padding:50px 16px 14px;color:#fff;flex-shrink:0;position:relative;overflow:visible;width:100%}
 .gt::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(circle at 30% 50%,rgba(124,58,237,.2),transparent 60%)}
 .gtr{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1}
 .gr{text-align:center}.gr .gl{font-size:12px;opacity:.6}.gr .gn{font-size:16px;font-weight:800}
 .glt{width:64px;height:64px;background:rgba(255,255,255,.1);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:900;backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.15);animation:letterPop .5s ease;position:relative;z-index:1}
 .gtm{background:rgba(255,255,255,.1);padding:10px 16px;border-radius:22px;display:flex;align-items:center;gap:6px;font-size:20px;font-weight:700;backdrop-filter:blur(10px);min-width:80px;justify-content:center;border:1px solid rgba(255,255,255,.1);position:relative;z-index:1;transition:all .3s}
 .gtm.w{background:rgba(239,68,68,.3);border-color:rgba(239,68,68,.5);animation:countPulse 1s infinite}
-.gpb{height:4px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden}
+.gpb{height:4px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;flex-shrink:0}
 .gpbf{height:100%;background:linear-gradient(90deg,var(--p),var(--p2),#ec4899);transition:width .3s;border-radius:2px}
 .gpbar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--card);border-bottom:1px solid var(--bdr);flex-shrink:0;backdrop-filter:blur(10px);justify-content:center}
 .gpbar-inner{display:flex;align-items:center;gap:8px;width:100%;max-width:500px}
@@ -617,7 +617,7 @@ function updRoom(){
 function genLink(){$('share-link').value=location.origin+location.pathname+'?room='+rCode;}
 function genQR(){const q=$('qr-code');q.innerHTML='';if(typeof QRCode!=='undefined')try{new QRCode(q,{text:$('share-link').value,width:160,height:160,colorDark:"#7c3aed",colorLight:"#0f0c29",correctLevel:QRCode.CorrectLevel.M});}catch(e){}}
 function copyShareLink(){const l=$('share-link').value;navigator.clipboard?navigator.clipboard.writeText(l).then(()=>toast('کپی شد!')):($('share-link').select(),document.execCommand('copy'),toast('کپی شد!'));}
-function shareVia(p){const l=$('share-link').value;const t='🎮 بیا اسم فامیل بازی کنیم! کد اتاق: '+rCode+'\n'+l;const e=encodeURIComponent(t);const el=encodeURIComponent(l);if(navigator.share&&p==='more'){navigator.share({title:'اسم فامیل',text:t,url:l}).catch(()=>{});return;}let url='';switch(p){case'whatsapp':url='https://wa.me/?text='+e;break;case'telegram':url='https://t.me/share/url?url='+el+'&text='+encodeURIComponent('🎮 بیا اسم فامیل! کد: '+rCode);break;case'sms':url='sms:?body='+e;break;default:copyShareLink();return;}if(url){const w=window.open(url,'_blank','noopener,noreferrer');if(!w)copyShareLink();}}
+function shareVia(p){const l=$('share-link').value;const t='🎮 بیا اسم فامیل بازی کنیم! کد اتاق: '+rCode+'\n'+l;const e=encodeURIComponent(t);const el=encodeURIComponent(l);if(navigator.share&&p==='more'){navigator.share({title:'اسم فامیل',text:t,url:l}).catch(()=>{});return;}let url='';switch(p){case'whatsapp':url='https://wa.me/?text='+e;break;case'telegram':url='https://t.me/share/url?url='+el+'&text='+encodeURIComponent('🎮 بیا اسم فامیل! کد: '+rCode);break;case'sms':url='sms:?body='+e;break;default:copyShareLink();return;}if(url){const w=window.open(url,'_blank','noopener,noreferrer');if(!w)toast('لطفاً لینک رو دستی کپی کن');}}
 function onlineStart(){
   if(!sk||!sk.connected){toast('اتصال برقرار نیست! صبر کن...');return;}
   if(!isHost){toast('فقط میزبان می‌تونه شروع کنه!');return;}
@@ -676,7 +676,7 @@ function togDet(){$('d-tab').classList.toggle('sh');}
 
 // === REACTIONS ===
 function renderRBar(){let h='';REACTIONS.forEach(r=>{h+='<button class="reaction-btn" onclick="sendR(\''+r.e+'\')">'+r.e+'</button>';});$('reaction-bar').innerHTML=h;}
-function sendR(emoji){if(myReaction)return;myReaction=emoji;if(sk)sk.emit('send_reaction',{roomCode:rCode,emoji});document.querySelectorAll('.reaction-btn').forEach(b=>{if(b.textContent===emoji)b.classList.add('sent');});floatReaction(emoji);addRList({emoji,playerName:myName});}
+function sendR(emoji){if(myReaction)return;myReaction=emoji;if(sk)sk.emit('send_reaction',{roomCode:rCode,emoji});document.querySelectorAll('.reaction-btn').forEach(b=>{if(b.textContent===emoji)b.classList.add('sent');});}
 function floatReaction(emoji){const el=document.createElement('div');el.className='floating-reaction';el.textContent=emoji;el.style.left=(15+Math.random()*70)+'%';el.style.bottom='15%';document.body.appendChild(el);setTimeout(()=>el.remove(),3000);}
 function addRList(d){const l=$('reaction-list');const it=document.createElement('div');it.className='reaction-item';it.innerHTML='<span style="font-size:20px">'+d.emoji+'</span><span style="font-weight:600">'+(d.playerName||'?')+'</span>';l.appendChild(it);l.scrollTop=l.scrollHeight;}
 
