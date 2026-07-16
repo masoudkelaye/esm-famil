@@ -532,7 +532,7 @@ function connectSocket(){
     });
     sk.on('disconnect',()=>{connBad();});
     sk.on('connect_error',()=>{connBad();});
-    sk.on('rejoin_success',d=>{rCode=d.code;O.players=d.players;O.categories=d.categories;O.totalScores=d.totalScores||{};G.round=d.round;G.mRounds=d.maxRounds;G.tPer=d.timePerRound;G.letter=d.currentLetter;isHost=(Object.keys(d.players)[0]===myId);O.skippedPlayers=d.skippedPlayers||[];if(d.state==='playing')showOnlineGame(d.currentLetter);else if(d.state==='waiting_next')showOnlineResults();else{show('s-room');updRoom();}toast('دوباره وصل شدی!');});
+    sk.on('rejoin_success',d=>{rCode=d.code;O.players=d.players;O.categories=d.categories;O.totalScores=d.totalScores||{};O.results=d.lastResults||{};G.round=d.round;G.mRounds=d.maxRounds;G.tPer=d.timePerRound;G.letter=d.currentLetter;isHost=(Object.keys(d.players)[0]===myId);O.skippedPlayers=d.skippedPlayers||[];if(d.state==='playing')showOnlineGame(d.currentLetter);else if(d.state==='waiting_next')showOnlineResults();else{show('s-room');updRoom();}toast('دوباره وصل شدی!');});
     sk.on('rejoin_failed',()=>{rCode='';myToken='';localStorage.removeItem('esm_room');show('s-home');toast('اتصال به اتاق از دست رفت');});
     sk.on('room_created',d=>{rCode=d.code;myToken=d.token;isHost=true;localStorage.setItem('esm_room',JSON.stringify({code:rCode,token:myToken}));show('s-room');updRoom();genLink();setTimeout(genQR,300);});
     sk.on('room_joined',d=>{rCode=d.code;myToken=d.token;isHost=false;localStorage.setItem('esm_room',JSON.stringify({code:rCode,token:myToken}));show('s-room');updRoom();});
@@ -541,7 +541,7 @@ function connectSocket(){
     sk.on('game_started',d=>{O.categories=d.categories;O.players=d.players;O.skippedPlayers=[];G.round=d.round;G.mRounds=d.maxRounds;G.tPer=d.timePerRound;showOnlineGame(d.letter);});
     sk.on('new_round',d=>{O.categories=d.categories;G.round=d.round;G.mRounds=d.maxRounds;G.tPer=d.timePerRound;O.skippedPlayers=[];O.readyPlayers={};showOnlineGame(d.letter);});
     sk.on('answers_received',()=>{});
-    sk.on('submit_ack',()=>{});sk.on('first_submit',d=>{document.querySelectorAll('.ai').forEach(i=>{i.disabled=true;});$('b-sub').disabled=true;$('b-sub').textContent=d.playerName+' ثبت زد!';clearInterval(G.timer);toast(d.playerName+' ثبت زد! صبر کن...');O.submitted=true;});
+    sk.on('submit_ack',()=>{});sk.on('first_submit',d=>{if(O.submitted)return;O.submitted=true;document.querySelectorAll('.ai').forEach(i=>{i.disabled=true;});$('b-sub').disabled=true;$('b-sub').textContent=d.playerName+' ثبت زد!';clearInterval(G.timer);toast(d.playerName+' ثبت زد! جواب‌هات ارسال شد...');const ans={};O.categories.forEach(cat=>{const inp=document.getElementById('a_'+cat.id);ans[cat.id]=inp?inp.value.trim():'';});if(sk&&sk.connected)sk.emit('submit_answers',{roomCode:rCode,answers:ans});});
     sk.on('answers_progress',d=>{if($('w-bar-wrap')){$('w-bar-wrap').style.display='block';$('w-pf').style.width=((d.submitted/d.total)*100)+'%';$('w-ct').textContent=pn(d.submitted)+' از '+pn(d.total)+' جواب دادن';}});
     sk.on('round_results',d=>{clearInterval(G.timer);document.querySelectorAll('.ai').forEach(i=>{i.disabled=true;});O.results=d.results;O.totalScores=d.totalScores;G.round=d.round;G.letter=d.letter;O.readyPlayers=d.readyPlayers||{};showOnlineResults();});
     sk.on('scores_updated',d=>{O.totalScores=d.totalScores;toast('امتیازات آپدیت شد!');showOnlineResults();});
