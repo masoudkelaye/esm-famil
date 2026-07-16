@@ -82,8 +82,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,Arial,sans-s
 .gpbar-inner{display:flex;align-items:center;gap:8px;width:100%;max-width:500px}
 .pav{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff}
 .pname{font-size:14px;font-weight:600}
-.gb{flex:1;overflow-y:auto;overflow-x:hidden;padding:12px 16px;background:transparent;-webkit-overflow-scrolling:touch;max-width:100%;display:flex;flex-direction:column;align-items:center}
-.ac{background:var(--card);backdrop-filter:blur(10px);border:1px solid var(--bdr);border-radius:18px;padding:14px 16px;margin-bottom:10px;transition:all .3s;animation:slideUp .3s ease;width:100%;max-width:500px}
+.gb{flex:1;overflow-y:auto;overflow-x:hidden;padding:12px 16px;background:transparent;-webkit-overflow-scrolling:touch;max-width:100%;display:block}
+.ac{background:var(--card);backdrop-filter:blur(10px);border:1px solid var(--bdr);border-radius:18px;padding:14px 16px;margin-bottom:10px;transition:all .3s;animation:slideUp .3s ease;width:100%;max-width:500px;margin-left:auto;margin-right:auto}
 .ac.f{border-color:var(--g);box-shadow:0 0 20px rgba(16,185,129,.15)}
 .ach{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .aci{width:40px;height:40px;background:rgba(124,58,237,.15);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px}
@@ -170,7 +170,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,Arial,sans-s
 .login-btn svg{width:26px;height:26px}
 .lb-google{background:#fff;color:#333;box-shadow:0 4px 20px rgba(0,0,0,.2)}
 .lb-guest{background:linear-gradient(135deg,#059669,var(--g));color:#fff;box-shadow:0 4px 20px rgba(16,185,129,.3)}
-.edit-score-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--bdr)}
+.edit-player{margin-bottom:20px;padding:12px;background:rgba(255,255,255,.05);border-radius:12px}.edit-player h4{margin-bottom:10px;font-size:16px}.edit-cat-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bdr)}.edit-cat-row:last-child{border-bottom:none}.edit-cat-row span{font-size:13px;flex:1}.edit-cat-row input{width:60px;padding:6px;border:1px solid var(--bdr);border-radius:8px;font-size:14px;text-align:center;outline:none;font-family:inherit;background:rgba(255,255,255,.05);color:#fff}
 .edit-score-row:last-child{border-bottom:none}
 .edit-score-row .es-name{font-size:15px;font-weight:600;flex:1}
 .edit-score-row input{width:80px;padding:10px;border:1px solid var(--bdr);border-radius:12px;font-size:16px;text-align:center;outline:none;font-family:inherit;background:rgba(255,255,255,.05);color:#fff}
@@ -544,7 +544,7 @@ function connectSocket(){
     sk.on('submit_ack',()=>{});sk.on('first_submit',d=>{if(O.submitted)return;O.submitted=true;document.querySelectorAll('.ai').forEach(i=>{i.disabled=true;});$('b-sub').disabled=true;$('b-sub').textContent=d.playerName+' ثبت زد!';clearInterval(G.timer);toast(d.playerName+' ثبت زد! جواب‌هات ارسال شد...');const ans={};O.categories.forEach(cat=>{const inp=document.getElementById('a_'+cat.id);ans[cat.id]=inp?inp.value.trim():'';});if(sk&&sk.connected)sk.emit('submit_answers',{roomCode:rCode,answers:ans});});
     sk.on('answers_progress',d=>{if($('w-bar-wrap')){$('w-bar-wrap').style.display='block';$('w-pf').style.width=((d.submitted/d.total)*100)+'%';$('w-ct').textContent=pn(d.submitted)+' از '+pn(d.total)+' جواب دادن';}});
     sk.on('round_results',d=>{clearInterval(G.timer);document.querySelectorAll('.ai').forEach(i=>{i.disabled=true;});O.results=d.results;O.totalScores=d.totalScores;G.round=d.round;G.letter=d.letter;O.readyPlayers=d.readyPlayers||{};showOnlineResults();});
-    sk.on('scores_updated',d=>{O.totalScores=d.totalScores;toast('امتیازات آپدیت شد!');showOnlineResults();});
+    sk.on('scores_updated',d=>{O.totalScores=d.totalScores;toast('امتیازات آپدیت شد!');const savedReaction=myReaction;showOnlineResults();myReaction=savedReaction;});
     sk.on('game_finished',d=>{clearInterval(G.timer);O.totalScores=d.totalScores;O.players=d.players;showOnlineFinal();});
     sk.on('player_disconnected',d=>{toast('⚠️ '+d.playerName+' قطع شد');});
     sk.on('reaction_received',d=>{floatReaction(d.emoji);addRList(d);});
@@ -685,20 +685,7 @@ function sendReady(){if(sk)sk.emit('player_ready',{roomCode:rCode});$('b-ready')
 function updReady(){const g=$('ready-grid');let h='';Object.keys(O.players).forEach(pid=>{const p=O.players[pid];if(!p)return;const r=O.readyPlayers&&O.readyPlayers[pid];h+='<div class="ready-player'+(r?' ready':'')+'"><div style="font-size:18px">'+(r?'✅':'⏳')+'</div>'+p.name+'</div>';});g.innerHTML=h;}
 
 // === EDIT SCORES ===
-function buildEdit(sorted,ts){let h='';sorted.forEach(pid=>{const p=O.players[pid];if(!p)return;h+='<div class="edit-score-row"><span class="es-name">'+p.name+'</span><input type="number" id="es_'+pid+'" value="'+(ts[pid]||0)+'" min="0"></div>';});$('edit-scores-list').innerHTML=h;}
-function toggleEditScores(){const b=$('edit-scores-box');b.style.display=b.style.display==='none'?'block':'none';}
-function saveEditedScores(){if(!isHost||!sk)return;const ed={};Object.keys(O.players).forEach(pid=>{const inp=document.getElementById('es_'+pid);if(inp)ed[pid]=parseInt(inp.value)||0;});sk.emit('edit_scores',{roomCode:rCode,editedScores:ed});$('edit-scores-box').style.display='none';}
-function forceNextRound(){if(isHost&&sk)sk.emit('next_round',{roomCode:rCode});}
-
-// === FINAL ===
-function showOnlineFinal(){
-  const sorted=Object.keys(O.players).sort((a,b)=>(O.totalScores[b]||0)-(O.totalScores[a]||0));const w=O.players[sorted[0]];
-  $('f-win').textContent='🎉 '+(w?.name||'برنده')+' برنده شد!';$('f-sub').textContent=pn(O.totalScores[sorted[0]]||0)+' امتیاز';
-  const m=['🥇','🥈','🥉','4','5','6'];let h='';
-  sorted.forEach((pid,i)=>{const p=O.players[pid];if(!p)return;const cl=CLRS[i%CLRS.length];h+='<div class="fp"><span class="fm">'+m[i]+'</span><div class="ra2" style="background:'+cl+';width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px">'+(p.name||'?').charAt(0)+'</div><span class="fn">'+p.name+'</span><span class="fsc">'+pn(O.totalScores[pid]||0)+'</span></div>';});
-  $('f-pl').innerHTML=h;show('s-fin');confetti();
-  saveGameToHistory({date:new Date().toLocaleDateString('fa-IR'),mode:'online',letter:G.letter,round:G.round,playerNames:Object.values(O.players).map(p=>p.name).join('، '),myScore:O.totalScores[myId]||0});
-}
+function buildEdit(sorted,ts){let h='';sorted.forEach(pid=>{const p=O.players[pid];if(!p)return;h+='<div class="edit-player"><h4>'+p.name+'</h4>';O.categories.forEach(cat=>{const ans=O.results[pid]?.details?.[cat.id]?.answer||'—';const score=O.results[pid]?.details?.[cat.id]?.score||0;h+='<div class="edit-cat-row"><span>'+(cat.icon||'📝')+' '+cat.name+': '+ans+'</span><input type="number" id="es_'+pid+'_'+cat.id+'" value="'+score+'" min="0"></div>';});h+='</div>';});$('edit-scores-list').innerHTML=h;}
 function confetti(){const em=['🎉','🎊','⭐','🌟','✨','🏆','🎮','💜'];for(let i=0;i<40;i++)setTimeout(()=>{const c=document.createElement('div');c.className='cf';c.textContent=em[Math.floor(Math.random()*em.length)];c.style.left=Math.random()*100+'vw';c.style.animationDuration=(2+Math.random()*4)+'s';c.style.fontSize=(16+Math.random()*20)+'px';document.body.appendChild(c);setTimeout(()=>c.remove(),6000);},i*80);}
 </script>
 </body>
