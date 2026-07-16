@@ -553,6 +553,9 @@ function connectSocket(){
   }catch(e){console.log('Socket N/A');}
 }
 
+// Reconnect socket when page becomes visible again
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&sk&&!sk.connected){sk.connect();}});
+
 // === CONNECT WITH COUNTDOWN ===
 let connInterval=null,pendingAction=null;
 function waitForConnection(onSuccess,label){
@@ -614,7 +617,7 @@ function updRoom(){
 function genLink(){$('share-link').value=location.origin+location.pathname+'?room='+rCode;}
 function genQR(){const q=$('qr-code');q.innerHTML='';if(typeof QRCode!=='undefined')try{new QRCode(q,{text:$('share-link').value,width:160,height:160,colorDark:"#7c3aed",colorLight:"#0f0c29",correctLevel:QRCode.CorrectLevel.M});}catch(e){}}
 function copyShareLink(){const l=$('share-link').value;navigator.clipboard?navigator.clipboard.writeText(l).then(()=>toast('کپی شد!')):($('share-link').select(),document.execCommand('copy'),toast('کپی شد!'));}
-function shareVia(p){const l=$('share-link').value,t='🎮 بیا اسم فامیل بازی کنیم!\nکد: '+rCode+'\n'+l,e=encodeURIComponent(t),el=encodeURIComponent(l);if(navigator.share){navigator.share({title:'اسم فامیل',text:t,url:l}).catch(()=>{});return;}switch(p){case'whatsapp':window.open('https://wa.me/?text='+e,'_blank');break;case'telegram':window.open('https://t.me/share/url?url='+el+'&text='+encodeURIComponent('🎮 بیا اسم فامیل! کد: '+rCode),'_blank');break;case'sms':window.open('sms:?body='+e,'_blank');break;default:copyShareLink();break;}}
+function shareVia(p){const l=$('share-link').value;const t='🎮 بیا اسم فامیل بازی کنیم! کد اتاق: '+rCode+'\n'+l;const e=encodeURIComponent(t);const el=encodeURIComponent(l);if(navigator.share&&p==='more'){navigator.share({title:'اسم فامیل',text:t,url:l}).catch(()=>{});return;}let url='';switch(p){case'whatsapp':url='https://wa.me/?text='+e;break;case'telegram':url='https://t.me/share/url?url='+el+'&text='+encodeURIComponent('🎮 بیا اسم فامیل! کد: '+rCode);break;case'sms':url='sms:?body='+e;break;default:copyShareLink();return;}if(url){const w=window.open(url,'_blank','noopener,noreferrer');if(!w)copyShareLink();}}
 function onlineStart(){
   if(!sk||!sk.connected){toast('اتصال برقرار نیست! صبر کن...');return;}
   if(!isHost){toast('فقط میزبان می‌تونه شروع کنه!');return;}
