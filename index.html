@@ -452,6 +452,10 @@ function joinFromLink(){
   localStorage.setItem('esm_name',n);
   localStorage.setItem('esm_logged_in','guest');
   
+  // Clear any old room data - we're joining a NEW room from link
+  rCode='';myToken='';
+  localStorage.removeItem('esm_room');
+  
   // Set room code from URL
   const up=new URLSearchParams(window.location.search);
   const roomCode=up.get('room');
@@ -471,8 +475,16 @@ function showHistory(){loadGameHistory().then(()=>{const l=$('history-list');if(
 // === INIT ===
 document.addEventListener('DOMContentLoaded',()=>{
   const s=localStorage.getItem('esm_name');if(s){myName=s;if($('i-name'))$('i-name').value=s;}
-  const up=new URLSearchParams(window.location.search);if(up.get('room'))showGuestJoin();
-  const sr=localStorage.getItem('esm_room');if(sr)try{const d=JSON.parse(sr);rCode=d.code;myToken=d.token;}catch(e){}
+  const up=new URLSearchParams(window.location.search);
+  const hasRoomInUrl=!!up.get('room');
+  if(hasRoomInUrl){
+    // Don't restore old room - user is joining from a link
+    showGuestJoin();
+  }else{
+    // Only restore saved room if NOT coming from a link
+    const sr=localStorage.getItem('esm_room');
+    if(sr)try{const d=JSON.parse(sr);rCode=d.code;myToken=d.token;}catch(e){}
+  }
   renderCats();initFirebase();connectSocket();
 });
 function renderCats(){const g=$('cat-grid');g.innerHTML='';const def=new Set(['name','family','city','country','food','animal']);CATS.forEach(c=>{const d=document.createElement('button');d.type='button';d.className='cat-chip'+(def.has(c.id)?' sel':'');d.dataset.id=c.id;d.innerHTML='<span class="cci">'+c.i+'</span><span class="ccn">'+c.n+'</span>';d.onclick=()=>d.classList.toggle('sel');g.appendChild(d);});}
@@ -490,7 +502,10 @@ function selR(b){document.querySelectorAll('#r-opts .t-opt').forEach(x=>x.classL
 function connectSocket(){
   try{
     sk=io(SERVER_URL,{transports:['websocket','polling'],reconnection:true,reconnectionAttempts:50,reconnectionDelay:1000,reconnectionDelayMax:3000,timeout:15000});
-    sk.on('connect',()=>{myId=sk.id;connOk();updateConnBar();if(rCode&&myToken)sk.emit('rejoin_room',{roomCode:rCode,token:myToken});});
+    sk.on('connect',()=>{myId=sk.id;connOk();updateConnBar();
+      const hasRoomInUrl=!!new URLSearchParams(window.location.search).get('room');
+      if(rCode&&myToken&&!hasRoomInUrl)sk.emit('rejoin_room',{roomCode:rCode,token:myToken});
+    });
     sk.on('disconnect',()=>{connBad();});
     sk.on('connect_error',()=>{connBad();});
     sk.on('rejoin_success',d=>{rCode=d.code;O.players=d.players;O.categories=d.categories;O.totalScores=d.totalScores||{};G.round=d.round;G.mRounds=d.maxRounds;G.tPer=d.timePerRound;G.letter=d.currentLetter;isHost=(Object.keys(d.players)[0]===myId);O.skippedPlayers=d.skippedPlayers||[];if(d.state==='playing')showOnlineGame(d.currentLetter);else if(d.state==='waiting_next')showOnlineResults();else{show('s-room');updRoom();}toast('دوباره وصل شدی!');});
