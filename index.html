@@ -237,11 +237,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,Arial,sans-s
 <button class="login-btn lb-google" onclick="loginGoogle()"><svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>ورود با گوگل</button>
 <div class="div">یا</div>
 <button class="login-btn lb-guest" onclick="loginGuest()">👤 ورود به عنوان مهمان</button>
-<div id="landing-join" style="display:none;margin-top:16px">
+<div id="landing-join" style="margin-top:16px">
 <div class="div">📩 دعوت‌نامه دریافت شد!</div>
-<label class="fl">اسمت رو بنویس</label>
+<label class="fl">اسمت رو بنویس و وارد شو</label>
 <input type="text" id="guest-name" class="fi" placeholder="مثلاً: علی" maxlength="20" autocomplete="off"><br><br>
-<button class="btn bp" onclick="joinFromLink()">🚪 ورود به اتاق</button>
+<button class="btn bp" onclick="joinFromLink()">🚪 ورود به بازی</button>
 </div>
 </div>
 <div class="ver">v4.1</div>
@@ -439,9 +439,8 @@ function showGuestJoin(){
   const roomCode=up.get('room');
   if(roomCode){
     $('i-code').value=roomCode.toUpperCase();
-    // Show room code in the landing page
     const div=$('landing-join').querySelector('.div');
-    if(div)div.textContent='📩 دعوت به اتاق: '+roomCode.toUpperCase();
+    if(div)div.innerHTML='📩 دعوت به اتاق: <b>'+roomCode.toUpperCase()+'</b>';
   }
   setTimeout(()=>$('guest-name').focus(),100);
 }
@@ -451,18 +450,16 @@ function joinFromLink(){
   myName=n;isGuest=true;
   localStorage.setItem('esm_name',n);
   localStorage.setItem('esm_logged_in','guest');
-  
-  // Clear any old room data - we're joining a NEW room from link
+  // Clear old room data
   rCode='';myToken='';
   localStorage.removeItem('esm_room');
-  
   // Set room code from URL
   const up=new URLSearchParams(window.location.search);
   const roomCode=up.get('room');
   if(roomCode)$('i-code').value=roomCode.toUpperCase();
-  
   if(firebaseReady&&!currentUser)fbAuth.signInAnonymously().catch(()=>{});
   updateProfileUI();
+  // Auto join - no extra clicks needed
   joinOnline();
 }
 function doLogout(){if(fbAuth)fbAuth.signOut();currentUser=null;isGuest=true;myName='';localStorage.removeItem('esm_logged_in');show('s-landing');}
@@ -476,16 +473,29 @@ function showHistory(){loadGameHistory().then(()=>{const l=$('history-list');if(
 document.addEventListener('DOMContentLoaded',()=>{
   const s=localStorage.getItem('esm_name');if(s){myName=s;if($('i-name'))$('i-name').value=s;}
   const up=new URLSearchParams(window.location.search);
-  const hasRoomInUrl=!!up.get('room');
+  const roomFromUrl=up.get('room');
+  const hasRoomInUrl=!!roomFromUrl;
   if(hasRoomInUrl){
-    // Don't restore old room - user is joining from a link
-    showGuestJoin();
+    // User came from a shared link
+    if(myName&&myName!=='مهمان'){
+      // Already has a name → auto join immediately
+      $('i-code').value=roomFromUrl.toUpperCase();
+      rCode='';myToken='';
+      localStorage.removeItem('esm_room');
+      renderCats();initFirebase();connectSocket();
+      // Wait a moment then auto-join
+      setTimeout(()=>joinOnline(),500);
+    }else{
+      // No name → show name form then auto-join
+      showGuestJoin();
+      renderCats();initFirebase();connectSocket();
+    }
   }else{
-    // Only restore saved room if NOT coming from a link
+    // Normal flow
     const sr=localStorage.getItem('esm_room');
     if(sr)try{const d=JSON.parse(sr);rCode=d.code;myToken=d.token;}catch(e){}
+    renderCats();initFirebase();connectSocket();
   }
-  renderCats();initFirebase();connectSocket();
 });
 function renderCats(){const g=$('cat-grid');g.innerHTML='';const def=new Set(['name','family','city','country','food','animal']);CATS.forEach(c=>{const d=document.createElement('button');d.type='button';d.className='cat-chip'+(def.has(c.id)?' sel':'');d.dataset.id=c.id;d.innerHTML='<span class="cci">'+c.i+'</span><span class="ccn">'+c.n+'</span>';d.onclick=()=>d.classList.toggle('sel');g.appendChild(d);});}
 
@@ -519,7 +529,7 @@ function connectSocket(){
     sk.on('answers_received',()=>{});
     sk.on('submit_ack',()=>{});
     sk.on('answers_progress',d=>{if($('w-bar-wrap')){$('w-bar-wrap').style.display='block';$('w-pf').style.width=((d.submitted/d.total)*100)+'%';$('w-ct').textContent=pn(d.submitted)+' از '+pn(d.total)+' جواب دادن';}});
-    sk.on('round_results',d=>{clearInterval(G.timer);O.results=d.results;O.totalScores=d.totalScores;G.round=d.round;G.letter=d.letter;O.readyPlayers=d.readyPlayers||{};showOnlineResults();});
+    sk.on('round_results',d=>{clearInterval(G.timer);document.querySelectorAll('.ai').forEach(i=>{i.disabled=true;});O.results=d.results;O.totalScores=d.totalScores;G.round=d.round;G.letter=d.letter;O.readyPlayers=d.readyPlayers||{};showOnlineResults();});
     sk.on('scores_updated',d=>{O.totalScores=d.totalScores;toast('امتیازات آپدیت شد!');showOnlineResults();});
     sk.on('game_finished',d=>{clearInterval(G.timer);O.totalScores=d.totalScores;O.players=d.players;showOnlineFinal();});
     sk.on('player_disconnected',d=>{toast('⚠️ '+d.playerName+' قطع شد');});
@@ -610,15 +620,16 @@ function skipP(pid,n){if(!isHost||!sk)return;if(confirm(n+' از این دور �
 // === GAME ===
 function showOnlineGame(letter){
   O.submitted=false;G.letter=letter;G.tLeft=G.tPer;
-  $('g-round').textContent='دور '+pn(G.round)+' از '+pn(G.mRounds);$('g-letter').textContent=letter;$('t-txt').textContent=pn(G.tLeft);$('g-timer').classList.remove('w');$('b-sub').disabled=false;$('b-sub').textContent='ثبت جواب‌ها ✓';
+  $('g-round').textContent='دور '+pn(G.round)+' از '+pn(G.mRounds);$('g-letter').textContent=letter;$('t-txt').textContent=pn(G.tLeft);$('g-timer').classList.remove('w');$('b-sub').disabled=true;$('b-sub').textContent='ثبت جواب‌ها ✓';
   const box=$('ans-box');box.innerHTML='';
   const phs={name:'مثلاً: علی',family:'مثلاً: احمدی',city:'مثلاً: اصفهان',country:'مثلاً: ژاپن',food:'مثلاً: قورمه‌سبزی',animal:'مثلاً: گربه',fruit:'مثلاً: سیب',color:'مثلاً: قرمز',car:'مثلاً: پراید',flower:'مثلاً: رز'};
   O.categories.forEach((cat,i)=>{const d=document.createElement('div');d.className='ac';d.style.animationDelay=(i*0.05)+'s';d.innerHTML='<div class="ach"><div class="aci">'+(cat.icon||'📝')+'</div><div class="acl">'+cat.name+'</div></div><input type="text" class="ai" id="a_'+cat.id+'" placeholder="'+(phs[cat.id]||'مثلاً: '+cat.name)+'" autocomplete="off">';box.appendChild(d);});
-  document.querySelectorAll('.ai').forEach(inp=>{inp.addEventListener('input',e=>{const c=e.target.closest('.ac');if(c)c.classList.toggle('f',!!e.target.value.trim());let f=0;document.querySelectorAll('.ai').forEach(x=>{if(x.value.trim())f++;});$('g-prog').style.width=(f/O.categories.length*100)+'%';});});
+  document.querySelectorAll('.ai').forEach(inp=>{inp.addEventListener('input',e=>{const c=e.target.closest('.ac');if(c)c.classList.toggle('f',!!e.target.value.trim());checkAllFilled();});});
   show('s-game');clearInterval(G.timer);
   G.timer=setInterval(()=>{G.tLeft--;$('t-txt').textContent=pn(G.tLeft);if(G.tLeft<=10)$('g-timer').classList.add('w');if(G.tLeft<=0){clearInterval(G.timer);submitAns();}},1000);
-  setTimeout(()=>{const f=document.querySelector('.ai');if(f)f.focus();},300);
+  setTimeout(()=>{const f=document.querySelector('.ai');if(f)f.focus();},300);checkAllFilled();
 }
+function checkAllFilled(){let filled=0;const total=O.categories.length;document.querySelectorAll(".ai").forEach(inp=>{if(inp.value.trim())filled++;});$("g-prog").style.width=(filled/total*100)+"%";$("b-sub").disabled=(filled<total);if(filled>=total)$("b-sub").textContent="ثبت جواب‌ها ✓";else $("b-sub").textContent=pn(filled)+" از "+pn(total)+" پر شده";}
 function submitAns(){
   if(O.submitted)return;O.submitted=true;clearInterval(G.timer);
   const ans={};O.categories.forEach(c=>{const inp=document.getElementById('a_'+c.id);ans[c.id]=inp?inp.value.trim():'';});
