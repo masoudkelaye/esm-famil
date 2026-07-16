@@ -453,14 +453,23 @@ function joinFromLink(){
   // Clear old room data
   rCode='';myToken='';
   localStorage.removeItem('esm_room');
-  // Set room code from URL
+  // Get room code from URL
   const up=new URLSearchParams(window.location.search);
-  const roomCode=up.get('room');
-  if(roomCode)$('i-code').value=roomCode.toUpperCase();
-  if(firebaseReady&&!currentUser)fbAuth.signInAnonymously().catch(()=>{});
-  updateProfileUI();
-  // Auto join - no extra clicks needed
-  joinOnline();
+  const roomCode=(up.get('room')||'').toUpperCase();
+  if(!roomCode||roomCode.length<4){toast('کد اتاق نامعتبر!');return;}
+  // Show loading
+  show('s-load');$('l-txt').textContent='در حال ورود به اتاق...';
+  // Ensure socket is connected
+  if(!sk)connectSocket();
+  // Try to join
+  const tryJoin=()=>{
+    if(sk&&sk.connected){
+      sk.emit('join_room',{roomCode:roomCode,playerName:n});
+    }else{
+      setTimeout(tryJoin,500);
+    }
+  };
+  tryJoin();
 }
 function doLogout(){if(fbAuth)fbAuth.signOut();currentUser=null;isGuest=true;myName='';localStorage.removeItem('esm_logged_in');show('s-landing');}
 
@@ -479,14 +488,19 @@ document.addEventListener('DOMContentLoaded',()=>{
     // User came from a shared link
     if(myName&&myName!=='مهمان'){
       // Already has a name → auto join immediately
-      $('i-code').value=roomFromUrl.toUpperCase();
       rCode='';myToken='';
       localStorage.removeItem('esm_room');
+      const code=roomFromUrl.toUpperCase();
+      show('s-load');$('l-txt').textContent='در حال ورود به اتاق...';
       renderCats();initFirebase();connectSocket();
-      // Wait a moment then auto-join
-      setTimeout(()=>joinOnline(),500);
+      // Wait for socket then join
+      const tryJoin=()=>{
+        if(sk&&sk.connected){sk.emit('join_room',{roomCode:code,playerName:myName});}
+        else{setTimeout(tryJoin,500);}
+      };
+      setTimeout(tryJoin,500);
     }else{
-      // No name → show name form then auto-join
+      // No name → show name form
       showGuestJoin();
       renderCats();initFirebase();connectSocket();
     }
@@ -519,7 +533,7 @@ function connectSocket(){
     sk.on('disconnect',()=>{connBad();});
     sk.on('connect_error',()=>{connBad();});
     sk.on('rejoin_success',d=>{rCode=d.code;O.players=d.players;O.categories=d.categories;O.totalScores=d.totalScores||{};G.round=d.round;G.mRounds=d.maxRounds;G.tPer=d.timePerRound;G.letter=d.currentLetter;isHost=(Object.keys(d.players)[0]===myId);O.skippedPlayers=d.skippedPlayers||[];if(d.state==='playing')showOnlineGame(d.currentLetter);else if(d.state==='waiting_next')showOnlineResults();else{show('s-room');updRoom();}toast('دوباره وصل شدی!');});
-    sk.on('rejoin_failed',()=>{rCode='';myToken='';localStorage.removeItem('esm_room');});
+    sk.on('rejoin_failed',()=>{rCode='';myToken='';localStorage.removeItem('esm_room');show('s-home');toast('اتصال به اتاق از دست رفت');});
     sk.on('room_created',d=>{rCode=d.code;myToken=d.token;isHost=true;localStorage.setItem('esm_room',JSON.stringify({code:rCode,token:myToken}));show('s-room');updRoom();genLink();setTimeout(genQR,300);});
     sk.on('room_joined',d=>{rCode=d.code;myToken=d.token;isHost=false;localStorage.setItem('esm_room',JSON.stringify({code:rCode,token:myToken}));show('s-room');updRoom();});
     sk.on('room_update',d=>{O.players=d.players||{};O.skippedPlayers=d.skippedPlayers||[];updRoom();});
