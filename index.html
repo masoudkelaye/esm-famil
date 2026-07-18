@@ -69,20 +69,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,Arial,sans-s
 .bh{background:rgba(245,158,11,.2);color:#fbbf24}.by{background:rgba(168,85,247,.2);color:#c084fc}.bgr{background:rgba(16,185,129,.2);color:#34d399}.bred{background:rgba(239,68,68,.2);color:#f87171}
 .wt{text-align:center;color:var(--tl);font-size:14px;padding:16px 0;width:90%;max-width:500px}
 .bst{width:90%;max-width:400px;margin:0 auto}
-.gt{background:linear-gradient(135deg,#0f0c29,#302b63);padding:50px 16px 14px;color:#fff;flex-shrink:0;position:relative;overflow:visible;width:100%}
+.gt{background:linear-gradient(135deg,#0f0c29,#302b63);padding:50px 16px 14px;color:#fff;position:fixed;top:0;left:0;right:0;z-index:100;width:100%}
 .gt::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(circle at 30% 50%,rgba(124,58,237,.2),transparent 60%)}
 .gtr{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1}
 .gr{text-align:center}.gr .gl{font-size:12px;opacity:.6}.gr .gn{font-size:16px;font-weight:800}
 .glt{width:64px;height:64px;background:rgba(255,255,255,.1);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:900;backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.15);animation:letterPop .5s ease;position:relative;z-index:1}
 .gtm{background:rgba(255,255,255,.1);padding:10px 16px;border-radius:22px;display:flex;align-items:center;gap:6px;font-size:20px;font-weight:700;backdrop-filter:blur(10px);min-width:80px;justify-content:center;border:1px solid rgba(255,255,255,.1);position:relative;z-index:1;transition:all .3s}
 .gtm.w{background:rgba(239,68,68,.3);border-color:rgba(239,68,68,.5);animation:countPulse 1s infinite}
-.gpb{height:4px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;flex-shrink:0}
+.gpb{height:4px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;position:fixed;top:150px;left:0;right:0;z-index:98}
 .gpbf{height:100%;background:linear-gradient(90deg,var(--p),var(--p2),#ec4899);transition:width .3s;border-radius:2px}
-.gpbar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--card);border-bottom:1px solid var(--bdr);flex-shrink:0;backdrop-filter:blur(10px);justify-content:center}
+.gpbar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--card);border-bottom:1px solid var(--bdr);position:fixed;top:100px;left:0;right:0;z-index:99;backdrop-filter:blur(10px);justify-content:center}
 .gpbar-inner{display:flex;align-items:center;gap:8px;width:100%;max-width:500px}
 .pav{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff}
 .pname{font-size:14px;font-weight:600}
-.gb{flex:1;overflow-y:auto;overflow-x:hidden;padding:12px 16px;background:transparent;-webkit-overflow-scrolling:touch;max-width:100%;display:block}
+.gb{flex:1;overflow-y:auto;overflow-x:hidden;padding:12px 16px;padding-top:170px;background:transparent;-webkit-overflow-scrolling:touch;max-width:100%;display:block}
 .ac{background:var(--card);backdrop-filter:blur(10px);border:1px solid var(--bdr);border-radius:18px;padding:14px 16px;margin-bottom:10px;transition:all .3s;animation:slideUp .3s ease;width:100%;max-width:500px;margin-left:auto;margin-right:auto}
 .ac.f{border-color:var(--g);box-shadow:0 0 20px rgba(16,185,129,.15)}
 .ach{display:flex;align-items:center;gap:10px;margin-bottom:10px}
@@ -334,7 +334,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,Arial,sans-s
 <div class="rc" id="r-pl"></div>
 <div class="rc"><button class="db" onclick="togDet()">مشاهده جزئیات ▼</button><table class="dt" id="d-tab"></table></div>
 <div class="rc" id="reactions-box"><h3 style="font-size:15px;font-weight:700;margin-bottom:8px;text-align:center">ریاکشن بفرست!</h3><div class="reaction-bar" id="reaction-bar"></div><div class="reaction-list" id="reaction-list"></div></div>
+<div class="rc" id="chat-box"><h3 style="font-size:15px;font-weight:700;margin-bottom:8px;text-align:center">💬 چت</h3><div id="chat-messages" style="max-height:150px;overflow-y:auto;margin-bottom:8px;padding:8px;background:rgba(255,255,255,.03);border-radius:8px"></div><div style="display:flex;gap:8px"><input type="text" id="chat-input" class="fi" placeholder="پیامت رو بنویس..." style="flex:1;padding:10px 14px"><button class="btn bp" onclick="sendChat()" style="width:auto;padding:10px 18px">ارسال</button></div></div>
 <div class="rc" id="edit-scores-box" style="display:none"><h3 style="font-size:16px;font-weight:700;margin-bottom:12px">✏️ ویرایش امتیازات</h3><div id="edit-scores-list"></div><button class="btn bp" onclick="saveEditedScores()" style="margin-top:12px">💾 ذخیره</button></div>
+<div class="rc" id="chat-box"><h3 style="font-size:15px;font-weight:700;margin-bottom:8px;text-align:center">💬 چت</h3><div id="chat-messages" style="max-height:150px;overflow-y:auto;margin-bottom:8px;padding:8px;background:rgba(255,255,255,.03);border-radius:8px"></div><div style="display:flex;gap:8px"><input type="text" id="chat-input" class="fi" placeholder="پیامت رو بنویس..." style="flex:1;padding:10px 14px"><button class="btn bp" onclick="sendChat()" style="width:auto;padding:10px 18px">ارسال</button></div></div>
 <div class="rc" id="ready-box"><h3 style="font-size:15px;font-weight:700;margin-bottom:8px;text-align:center">آماده برای دور بعد؟</h3><div class="ready-grid" id="ready-grid"></div><button class="btn bg" id="b-ready" onclick="sendReady()">✅ آماده‌ام!</button></div>
 </div>
 <div class="rf">
@@ -549,6 +551,8 @@ function connectSocket(){
     sk.on('player_disconnected',d=>{toast('⚠️ '+d.playerName+' قطع شد');});
     sk.on('reaction_received',d=>{floatReaction(d.emoji);addRList(d);});
     sk.on('ready_update',d=>{O.readyPlayers=d.readyPlayers||{};updReady();});
+    sk.on('chat_message',d=>{const div=document.createElement('div');div.style.cssText='padding:6px 0;border-bottom:1px solid var(--bdr);font-size:13px';div.innerHTML='<b style="color:var(--p2)">'+d.playerName+':</b> '+d.message;const box=$("chat-messages");if(box){box.appendChild(div);box.scrollTop=box.scrollHeight;}});
+
     sk.on('player_skipped',d=>{O.skippedPlayers=d.skippedPlayers||[];toast((d.playerName||'?')+' رد شد');updRoom();});
   }catch(e){console.log('Socket N/A');}
 }
@@ -689,6 +693,9 @@ function buildEdit(sorted,ts){let h='';sorted.forEach(pid=>{const p=O.players[pi
 function toggleEditScores(){const b=$("edit-scores-box");b.style.display=b.style.display==="none"?"block":"none";}
 function saveEditedScores(){if(!isHost||!sk)return;const ed={};Object.keys(O.players).forEach(pid=>{let total=0;O.categories.forEach(cat=>{const inp=document.getElementById("es_"+pid+"_"+cat.id);if(inp)total+=parseInt(inp.value)||0;});ed[pid]=total;});sk.emit("edit_scores",{roomCode:rCode,editedScores:ed});$("edit-scores-box").style.display="none";}
 function confetti(){const em=['🎉','🎊','⭐','🌟','✨','🏆','🎮','💜'];for(let i=0;i<40;i++)setTimeout(()=>{const c=document.createElement('div');c.className='cf';c.textContent=em[Math.floor(Math.random()*em.length)];c.style.left=Math.random()*100+'vw';c.style.animationDuration=(2+Math.random()*4)+'s';c.style.fontSize=(16+Math.random()*20)+'px';document.body.appendChild(c);setTimeout(()=>c.remove(),6000);},i*80);}
+// === CHAT ===
+function sendChat(){const msg=$("chat-input").value.trim();if(!msg||!sk)return;sk.emit("chat_message",{roomCode:rCode,message:msg});$("chat-input").value="";}
+document.addEventListener("keypress",e=>{if(e.target.id==="chat-input"&&e.key==="Enter")sendChat();});
 </script>
 </body>
 </html>
