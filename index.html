@@ -238,7 +238,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,Arial,sans-s
 <div id="landing-join" style="display:none;margin-top:16px">
 <div class="div">📩 دعوت‌نامه دریافت شد!</div>
 <label class="fl">اسمت رو بنویس و وارد شو</label>
-<input type="text" id="guest-name" class="fi" placeholder="مثلاً: علی" maxlength="20" autocomplete="off"><br><br>
+<input type="text" id="guest-name" class="fi" placeholder="نام شما" maxlength="20" autocomplete="off"><br><br>
 <button class="btn bp" onclick="joinFromLink()">🚪 ورود به بازی</button>
 </div>
 </div>
@@ -257,7 +257,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,Arial,sans-s
 <div class="profile-btns"><button onclick="showHistory()">📊 تاریخچه</button><button onclick="doLogout()">🚪 خروج</button></div>
 </div></div>
 <label class="fl">اسم شما</label>
-<input type="text" id="i-name" class="fi" placeholder="مثلاً: علی" maxlength="20" autocomplete="off"><br><br>
+<input type="text" id="i-name" class="fi" placeholder="نام شما" maxlength="20" autocomplete="off"><br><br>
 <button class="btn bp" onclick="goSetup()">🌐 ساخت بازی آنلاین</button>
 <div class="div">یا وارد اتاق شو</div>
 <div class="jb"><input type="text" id="i-code" class="fi" placeholder="کد ۶ رقمی" maxlength="6" style="text-align:center;letter-spacing:4px;font-size:22px" autocomplete="off"><button class="btn bo" onclick="joinOnline()" style="margin:0">🚪</button></div>
@@ -637,8 +637,8 @@ function showOnlineGame(letter){
   O.submitted=false;G.letter=letter;G.tLeft=G.tPer;
   $('g-round').textContent='دور '+pn(G.round)+' از '+pn(G.mRounds);$('g-letter').textContent=letter;$('t-txt').textContent=pn(G.tLeft);$('g-timer').classList.remove('w');$('b-sub').disabled=true;$('b-sub').textContent='ثبت جواب‌ها ✓';
   const box=$('ans-box');box.innerHTML='';
-  const phs={name:'مثلاً: علی',family:'مثلاً: احمدی',city:'مثلاً: اصفهان',country:'مثلاً: ژاپن',food:'مثلاً: قورمه‌سبزی',animal:'مثلاً: گربه',fruit:'مثلاً: سیب',color:'مثلاً: قرمز',car:'مثلاً: پراید',flower:'مثلاً: رز'};
-  O.categories.forEach((cat,i)=>{const d=document.createElement('div');d.className='ac';d.style.animationDelay=(i*0.05)+'s';d.innerHTML='<div class="ach"><div class="aci">'+(cat.icon||'📝')+'</div><div class="acl">'+cat.name+'</div></div><input type="text" class="ai" id="a_'+cat.id+'" placeholder="'+(phs[cat.id]||'مثلاً: '+cat.name)+'" autocomplete="off">';box.appendChild(d);});
+  const phs={};
+  O.categories.forEach((cat,i)=>{const d=document.createElement('div');d.className='ac';d.style.animationDelay=(i*0.05)+'s';d.innerHTML='<div class="ach"><div class="aci">'+(cat.icon||'📝')+'</div><div class="acl">'+cat.name+'</div></div><input type="text" class="ai" id="a_'+cat.id+'" placeholder="" autocomplete="off">';box.appendChild(d);});
   document.querySelectorAll('.ai').forEach(inp=>{inp.addEventListener('input',e=>{const c=e.target.closest('.ac');if(c)c.classList.toggle('f',!!e.target.value.trim());checkAllFilled();});});
   show('s-game');clearInterval(G.timer);
   G.timer=setInterval(()=>{G.tLeft--;$('t-txt').textContent=pn(G.tLeft);if(G.tLeft<=10)$('g-timer').classList.add('w');if(G.tLeft<=0){clearInterval(G.timer);submitAns();}},1000);
