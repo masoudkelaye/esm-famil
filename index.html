@@ -542,7 +542,7 @@ function connectSocket(){
     sk.on('answers_received',()=>{});
     sk.on('submit_ack',()=>{});sk.on('first_submit',d=>{if(O.submitted)return;O.submitted=true;document.querySelectorAll('.ai').forEach(i=>{i.disabled=true;});$('b-sub').disabled=true;$('b-sub').textContent=d.playerName+' ثبت زد!';clearInterval(G.timer);toast(d.playerName+' ثبت زد! جواب‌هات ارسال شد...');const ans={};O.categories.forEach(cat=>{const inp=document.getElementById('a_'+cat.id);ans[cat.id]=inp?inp.value.trim():'';});if(sk&&sk.connected)sk.emit('submit_answers',{roomCode:rCode,answers:ans});});
     sk.on('answers_progress',d=>{if($('w-bar-wrap')){$('w-bar-wrap').style.display='block';$('w-pf').style.width=((d.submitted/d.total)*100)+'%';$('w-ct').textContent=pn(d.submitted)+' از '+pn(d.total)+' جواب دادن';}});
-    sk.on('round_results',d=>{clearInterval(G.timer);document.querySelectorAll('.ai').forEach(i=>{i.disabled=true;});O.results=d.results;O.totalScores=d.totalScores;G.round=d.round;G.letter=d.letter;O.readyPlayers=d.readyPlayers||{};showOnlineResults();});
+    sk.on('round_results',d=>{$('game-header').style.display='none';$('game-progress').style.display='none';clearInterval(G.timer);document.querySelectorAll('.ai').forEach(i=>{i.disabled=true;});O.results=d.results;O.totalScores=d.totalScores;G.round=d.round;G.letter=d.letter;O.readyPlayers=d.readyPlayers||{};showOnlineResults();});
     sk.on('scores_updated',d=>{O.totalScores=d.totalScores;toast('امتیازات آپدیت شد!');const savedReaction=myReaction;showOnlineResults();myReaction=savedReaction;});
     sk.on('game_finished',d=>{clearInterval(G.timer);O.totalScores=d.totalScores;O.players=d.players;showOnlineFinal();});
     sk.on('player_disconnected',d=>{toast('⚠️ '+d.playerName+' قطع شد');});
