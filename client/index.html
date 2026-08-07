@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>اسم فامیل آنلاین</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- HOME SCREEN -->
+    <div id="screen-home" class="screen active">
+        <div class="gradient-bg">
+            <div class="logo-box">🎮</div>
+            <h1 class="title">اسم فامیل آنلاین</h1>
+            <p class="subtitle">بازی چند نفره از راه دور</p>
+        </div>
+        <div class="card home-card">
+            <label class="form-label">اسم شما</label>
+            <input type="text" id="input-name" class="form-input" placeholder="مثلاً: علی" maxlength="20">
+            <br><br>
+            <button class="btn btn-primary" onclick="createRoom()">🏠 ساخت اتاق جدید</button>
+            <div class="divider">یا وارد اتاق شو</div>
+            <div class="join-box">
+                <input type="text" id="input-code" class="form-input code-input" placeholder="کد ۶ رقمی" maxlength="6" style="text-align:center;letter-spacing:4px;font-size:22px;">
+                <button class="btn btn-green" onclick="joinRoom()">🚪 ورود</button>
+            </div>
+        </div>
+        <div class="version">نسخه ۱.۰ | ساخته شده با ❤️</div>
+    </div>
+
+    <!-- LOADING SCREEN -->
+    <div id="screen-loading" class="screen">
+        <div class="gradient-bg" style="justify-content:center;align-items:center;">
+            <div class="spinner"></div>
+            <p class="loading-text" id="loading-text">در حال اتصال...</p>
+        </div>
+    </div>
+
+    <!-- WAITING ROOM SCREEN -->
+    <div id="screen-room" class="screen">
+        <div class="gradient-bg" style="padding-top:50px;">
+            <div class="room-header">
+                <button class="back-btn-small" onclick="leaveRoom()">✕</button>
+                <h2>اتاق بازی</h2>
+            </div>
+        </div>
+        <div class="room-body">
+            <div class="room-code-box">
+                <div class="room-code-label">کد اتاق</div>
+                <div class="room-code" id="display-code">------</div>
+                <button class="btn btn-sm" onclick="copyCode()">📋 کپی</button>
+            </div>
+            
+            <div class="player-count">
+                <span id="player-count-text">۱ بازیکن</span>
+            </div>
+            
+            <div class="players-list" id="players-list"></div>
+            
+            <div class="waiting-text" id="waiting-text">منتظر شروع بازی...</div>
+            
+            <button class="btn btn-green btn-start" id="btn-start" onclick="startGame()" style="display:none;">
+                ▶ شروع بازی
+            </button>
+        </div>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="screen-game" class="screen">
+        <div class="game-top">
+            <div class="game-top-row">
+                <div class="game-round" id="game-round">دور ۱ از ۵</div>
+                <div class="game-letter" id="game-letter">ب</div>
+                <div class="game-timer" id="game-timer">
+                    <span>⏱</span>
+                    <span id="timer-text">۶۰</span>
+                </div>
+            </div>
+        </div>
+        <div class="game-body">
+            <div id="answers-container"></div>
+        </div>
+        <div class="game-footer">
+            <button class="btn btn-primary" id="btn-submit" onclick="submitAnswers()">ثبت جواب‌ها ✓</button>
+        </div>
+    </div>
+
+    <!-- WAITING FOR OTHERS SCREEN -->
+    <div id="screen-waiting" class="screen">
+        <div class="gradient-bg" style="justify-content:center;align-items:center;padding:20px;">
+            <div class="waiting-card-big">
+                <div class="waiting-emoji">📱</div>
+                <h2>جواب‌هات ثبت شد!</h2>
+                <p>منتظر بقیه بازیکن‌ها هستیم...</p>
+                <div class="progress-bar-big" id="wait-progress">
+                    <div class="progress-fill" id="wait-progress-fill" style="width:0%"></div>
+                </div>
+                <p id="wait-count" style="margin-top:12px;">۰ از ۰ بازیکن جواب دادن</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- RESULTS SCREEN -->
+    <div id="screen-results" class="screen">
+        <div class="gradient-bg" style="padding-top:50px;">
+            <h2 id="results-title" class="results-title">نتایج دور ۱</h2>
+            <p id="results-letter" class="results-subtitle">حرف: ب</p>
+        </div>
+        <div class="results-body">
+            <div class="result-card" id="result-players"></div>
+            <div class="result-card">
+                <button class="details-btn" onclick="toggleDetails()">مشاهده جزئیات ▼</button>
+                <table class="details-table" id="details-table"></table>
+            </div>
+        </div>
+        <div class="results-footer">
+            <button class="btn btn-amber" id="btn-next-round" onclick="nextRound()">دور بعدی ▶</button>
+        </div>
+    </div>
+
+    <!-- FINAL RESULTS SCREEN -->
+    <div id="screen-final" class="screen">
+        <div class="gradient-gold">
+            <div class="final-cup">🏆</div>
+            <h1 class="final-winner" id="final-winner">برنده</h1>
+            <p class="final-sub" id="final-sub"></p>
+        </div>
+        <div class="final-body">
+            <div class="result-card" id="final-players"></div>
+            <button class="btn btn-primary" onclick="playAgain()">🔄 بازی دوباره</button>
+            <button class="btn btn-outline" onclick="goHome()" style="margin-top:8px;">🏠 خانه</button>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
