@@ -69,18 +69,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,Arial,sans-s
 .bh{background:rgba(245,158,11,.2);color:#fbbf24}.by{background:rgba(168,85,247,.2);color:#c084fc}.bgr{background:rgba(16,185,129,.2);color:#34d399}.bred{background:rgba(239,68,68,.2);color:#f87171}
 .wt{text-align:center;color:var(--tl);font-size:14px;padding:16px 0;width:90%;max-width:500px}
 .bst{width:90%;max-width:400px;margin:0 auto}
-.gt{background:linear-gradient(135deg,#0f0c29,#302b63);padding:20px 16px 14px;color:#fff;position:fixed;top:0;left:0;right:0;z-index:100;width:100%}
+.gt{background:linear-gradient(135deg,#0f0c29,#302b63);padding:20px 16px 14px;color:#fff;width:100%;flex-shrink:0;position:relative;z-index:100}
 .gt::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(circle at 30% 50%,rgba(124,58,237,.2),transparent 60%)}
 .gtr{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1}
 .gr{text-align:center}.gr .gl{font-size:12px;opacity:.6}.gr .gn{font-size:16px;font-weight:800}
 .glt{width:64px;height:64px;background:rgba(255,255,255,.1);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:900;backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.15);animation:letterPop .5s ease;position:relative;z-index:1}
 .gtm{background:rgba(255,255,255,.1);padding:10px 16px;border-radius:22px;display:flex;align-items:center;gap:6px;font-size:20px;font-weight:700;backdrop-filter:blur(10px);min-width:80px;justify-content:center;border:1px solid rgba(255,255,255,.1);position:relative;z-index:1;transition:all .3s}
 .gtm.w{background:rgba(239,68,68,.3);border-color:rgba(239,68,68,.5);animation:countPulse 1s infinite}
-.gpb{height:6px;background:rgba(255,255,255,.1);border-radius:0;overflow:hidden;position:fixed;top:100px;left:0;right:0;z-index:99}
+.gpb{height:6px;background:rgba(255,255,255,.1);border-radius:0;overflow:hidden;flex-shrink:0;position:relative;z-index:99}
 .gpbf{height:100%;background:linear-gradient(90deg,var(--p),var(--p2),#ec4899);transition:width .3s;border-radius:2px}
 .pav{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff}
 .pname{font-size:14px;font-weight:600}
-.gb{flex:1;overflow-y:auto;overflow-x:hidden;padding:12px 16px;padding-top:110px;background:transparent;-webkit-overflow-scrolling:touch;max-width:100%;display:block}
+.gb{flex:1;overflow-y:auto;overflow-x:hidden;padding:12px 16px;background:transparent;-webkit-overflow-scrolling:touch;max-width:100%;display:block;min-height:0}
 .ac{background:var(--card);backdrop-filter:blur(10px);border:1px solid var(--bdr);border-radius:18px;padding:14px 16px;margin-bottom:10px;transition:all .3s;animation:slideUp .3s ease;width:100%;max-width:500px;margin-left:auto;margin-right:auto}
 .ac.f{border-color:var(--g);box-shadow:0 0 20px rgba(16,185,129,.15)}
 .ach{display:flex;align-items:center;gap:10px;margin-bottom:10px}
@@ -311,11 +311,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,Arial,sans-s
 </div>
 
 <!-- GAME -->
-<!-- GAME HEADER (fixed position, outside .scr) -->
+<div id="s-game" class="scr">
 <div id="game-header" class="gt" style="display:none"><div class="gtr"><div class="gr"><div class="gl">دور</div><div class="gn" id="g-round">۱ از ۵</div></div><div class="glt" id="g-letter">ب</div><div class="gtm" id="g-timer"><span>⏱</span><span id="t-txt">۶۰</span></div></div></div>
 <div id="game-progress" class="gpb" style="display:none"><div class="gpbf" id="g-prog" style="width:100%"></div></div>
-
-<div id="s-game" class="scr">
 <div class="gb" id="ans-box"></div>
 <div class="gf"><button class="btn bp" id="b-sub" onclick="submitAns()">ثبت جواب‌ها ✓</button></div>
 </div>
@@ -669,11 +667,37 @@ function showOnlineResults(){
   myReaction=null;renderRBar();$('reaction-list').innerHTML='';$('reactions-box').style.display='block';
   if(isHost){$('b-edit-scores').style.display='block';$('edit-scores-box').style.display='none';buildEdit(sorted,ts);}else{$('b-edit-scores').style.display='none';$('edit-scores-box').style.display='none';}
   O.readyPlayers=O.readyPlayers||{};$('ready-box').style.display='block';$('b-ready').disabled=false;$('b-ready').textContent='✅ آماده‌ام!';updReady();
-  if(G.round<G.mRounds){if(isHost){$('b-force-next').style.display='block';$('b-force-next').onclick=()=>sk.emit('next_round',{roomCode:rCode});}else $('b-force-next').style.display='none';}
-  else{$('b-force-next').style.display='none';$('ready-box').style.display='none';}
+  if(G.round<G.mRounds){
+    if(isHost){$('b-force-next').style.display='block';$('b-force-next').textContent='⏩ شروع بدون تأیید';$('b-force-next').onclick=()=>sk.emit('next_round',{roomCode:rCode});}
+    else $('b-force-next').style.display='none';
+  }else{
+    if(isHost){$('b-force-next').style.display='block';$('b-force-next').textContent='🏁 پایان بازی و مشاهده نتیجه نهایی';$('b-force-next').onclick=()=>sk.emit('next_round',{roomCode:rCode});}
+    else $('b-force-next').style.display='none';
+    $('ready-box').style.display='none';
+  }
   show('s-res');
 }
 function togDet(){$('d-tab').classList.toggle('sh');}
+
+// === FINAL SCREEN ===
+function showOnlineFinal(){
+  clearInterval(G.timer);
+  const ts=O.totalScores||{};
+  const sorted=Object.keys(O.players).sort((a,b)=>(ts[b]||0)-(ts[a]||0));
+  const winnerId=sorted[0];
+  const winner=winnerId?O.players[winnerId]:null;
+  $('f-win').textContent=winner?('🏆 '+winner.name+' برنده شد!'):'پایان بازی';
+  $('f-sub').textContent=winner?('با '+pn(ts[winnerId]||0)+' امتیاز'):'';
+  let h='';sorted.forEach((pid,i)=>{
+    const p=O.players[pid];if(!p)return;
+    const rc=i<3?'r'+(i+1):'ro';const cl=CLRS[i%CLRS.length];
+    h+='<div class="rp"><div class="rpi"><div class="rk '+rc+'">'+pn(i+1)+'</div><div class="ra2" style="background:'+cl+'">'+(p.name||'?').charAt(0)+'</div><div class="rn">'+p.name+(p.id===myId?' (شما)':'')+'</div></div><div class="rsc">'+pn(ts[pid]||0)+'</div></div>';
+  });
+  $('f-pl').innerHTML=h;
+  show('s-fin');
+  confetti();
+  saveGameToHistory({date:new Date().toLocaleDateString('fa-IR'),letter:G.letter,round:G.mRounds,playerNames:sorted.map(pid=>O.players[pid]?.name).filter(Boolean).join('، '),myScore:ts[myId]||0});
+}
 
 // === REACTIONS ===
 function renderRBar(){let h='';REACTIONS.forEach(r=>{h+='<button class="reaction-btn" onclick="sendR(\''+r.e+'\')">'+r.e+'</button>';});$('reaction-bar').innerHTML=h;}
