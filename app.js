@@ -1,0 +1,1 @@
+// placeholder app.js - will be replaced
