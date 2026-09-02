@@ -31,7 +31,7 @@ const DEFAULT_CATS = [
   { id: 'animal',  name: 'حیوان',   icon: '🐾' },
 ];
 
-const DISCONNECT_GRACE_MS = 25000;   // time we keep a slot warm for a reconnect
+const DISCONNECT_GRACE_MS = 60000;   // keep slot for 1 minute on disconnect/background
 const ROUND_SAFETY_MARGIN_MS = 12000; // extra time added to a round's timer as a server-side safety net
 
 function genCode() {
@@ -119,28 +119,92 @@ function beginRound(room, { isFirst }) {
   armRoundSafetyTimer(room);
 }
 
+
+// Persian letter normalization (hamza/alef variants etc.)
+const ALEF_SET = new Set(['ا', 'آ', 'أ', 'إ', 'ٱ']);
+function normalizeLetter(ch) {
+  if (!ch) return '';
+  ch = String(ch)[0];
+  if (ALEF_SET.has(ch)) return 'ا';
+  if (ch === 'ة') return 'ه';
+  if (ch === 'ي') return 'ی';
+  if (ch === 'ك') return 'ک';
+  return ch;
+}
+function normalizeWord(w) {
+  return String(w || '')
+    .trim()
+    .replace(/\u200c/g, '') // ZWNJ
+    .replace(/[‌‍]/g, '')
+    .replace(/ي/g, 'ی')
+    .replace(/ك/g, 'ک')
+    .replace(/ة/g, 'ه')
+    .replace(/[أإٱ]/g, 'ا')
+    .replace(/آ/g, 'آ'); // keep آ as distinct start for letter آ
+}
+function startsWithLetter(word, letter) {
+  const w = normalizeWord(word);
+  if (!w || !letter) return false;
+  const first = normalizeLetter(w[0]);
+  const need = normalizeLetter(letter);
+  // letter آ matches words starting with آ or ا
+  if (need === 'ا' || letter === 'آ') {
+    return first === 'ا' || w[0] === 'آ' || ALEF_SET.has(w[0]);
+  }
+  return first === need;
+}
+// "Real word" heuristic without external dictionary:
+// - only Persian letters (and optional ZWNJ already stripped)
+// - length >= 2
+// - not all same character
+// - has at least one non-alef consonant-ish variety for longer strings
+function isPlausiblePersianWord(word) {
+  const w = normalizeWord(word);
+  if (w.length < 2) return false;
+  if (!/^[\u0600-\u06FF]+$/.test(w)) return false;
+  if (/^(.)\1+$/.test(w)) return false; // اااا / ببب
+  if (w.length === 2 && ALEF_SET.has(w[0]) && ALEF_SET.has(w[1])) return false;
+  return true;
+}
+function isValidAnswer(word, letter) {
+  const w = normalizeWord(word);
+  if (!w) return false;
+  if (!startsWithLetter(w, letter)) return false;
+  if (!isPlausiblePersianWord(w)) return false;
+  return true;
+}
+
 function calcAndShowResults(room) {
   clearRoundTimer(room);
   const ids = Object.keys(room.players);
   const results = {};
   ids.forEach(pid => { results[pid] = { total: 0, details: {} }; });
 
+  const letter = room.currentLetter;
   room.categories.forEach(cat => {
     const groups = {};
+    // normalize key for grouping so "علی" and "علي" count as same
+    const normKey = (a) => normalizeWord(a);
     ids.forEach(pid => {
       const ans = (room.answers[pid] || {})[cat.id] || '';
       const trimmed = ans.trim();
-      if (trimmed) {
-        if (!groups[trimmed]) groups[trimmed] = [];
-        groups[trimmed].push(pid);
-      }
+      if (!trimmed) return;
+      if (!isValidAnswer(trimmed, letter)) return; // invalid → no score, not in groups
+      const key = normKey(trimmed);
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(pid);
     });
     ids.forEach(pid => {
       const ans = ((room.answers[pid] || {})[cat.id] || '').trim();
-      if (!ans) { results[pid].details[cat.id] = { answer: '', score: 0 }; return; }
-      const group = groups[ans];
-      const score = group.length === 1 ? 20 : 10;
-      results[pid].details[cat.id] = { answer: ans, score };
+      if (!ans) { results[pid].details[cat.id] = { answer: '', score: 0, invalid: false }; return; }
+      if (!isValidAnswer(ans, letter)) {
+        results[pid].details[cat.id] = { answer: ans, score: 0, invalid: true };
+        return;
+      }
+      const key = normKey(ans);
+      const group = groups[key] || [];
+      const score = group.length === 1 ? 10 : 5;
+      results[pid].details[cat.id] = { answer: ans, score, invalid: false };
       results[pid].total += score;
     });
   });

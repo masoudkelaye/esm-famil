@@ -1,10 +1,9 @@
 {
   "name": "esm-famil-online",
-  "version": "4.2.0",
-  "description": "بازی آنلاین اسم فامیل",
+  "version": "4.3.0",
+  "main": "index.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node index.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

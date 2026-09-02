@@ -1,25 +1,11 @@
-# اسم فامیل آنلاین v4.2
+# اسم فامیل v4.3
 
-## فایل‌ها
-- `index.html` — فرانت کامل (تم liquid glass + اصلاحات)
-- `server.js` — سرور Socket.io
-- `package.json` — وابستگی‌های سرور
+## تغییرات
+- هدر بازی ثابت هنگام اسکرول
+- امتیاز: یکتا ۱۰ / مشترک ۵
+- قطع اتصال: حداقل ۶۰ ثانیه فرصت reconnect
+- اعتبارسنجی جواب: باید با حرف دور شروع شود و شبیه کلمهٔ واقعی فارسی باشد
 
-## اجرا
-### فرانت
-فایل `index.html` را روی Netlify / GitHub Pages / هر هاست استاتیک بگذارید.
-آدرس سرور داخل فایل: `SERVER_URL` (پیش‌فرض Render)
-
-### سرور
-```bash
-npm install
-npm start
-```
-
-## تغییرات v4.2
-- تم liquid glass شبیه ferdowsi.vercel.app
-- رفع کرش صفحه نتایج (ready-box)
-- تشخیص درست میزبان از hostId
-- toast خطای سرور
-- hostId در rejoin
-- آمادگی بازیکن‌ها + auto next
+## دیپلوی
+فرانت: فقط index.html
+سرور: npm install && npm start (فایل index.js یا server.js)
