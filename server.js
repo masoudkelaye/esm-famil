@@ -16,6 +16,18 @@ const io = new Server(server, {
 // Serve static files (harmless if the client is hosted elsewhere, e.g. Netlify)
 app.use(express.static(path.join(__dirname, '..', 'client')));
 app.get('/health', (req, res) => res.json({ ok: true, rooms: rooms.size }));
+app.get('/api/validate', (req, res) => {
+  const word = String(req.query.word || '');
+  const letter = String(req.query.letter || '');
+  const normalized = normalizeWord(word);
+  const starts = letter ? startsWithLetter(word, letter) : true;
+  const plausible = isPlausiblePersianWord(word);
+  const inDict = dictReady ? inDictionary(word) : null;
+  const valid = letter ? isValidAnswer(word, letter) : (plausible && (inDict !== false));
+  res.json({ word: normalized, letter: letter || null, startsWithLetter: starts, inDictionary: inDict, dictReady, valid });
+});
+app.get('/api/dict-status', (req, res) => res.json({ dictReady, size: WORD_SET.size }));
+
 
 // ============ DATA ============
 const rooms = new Map();           // code -> room
@@ -153,26 +165,57 @@ function startsWithLetter(word, letter) {
   }
   return first === need;
 }
-// "Real word" heuristic without external dictionary:
-// - only Persian letters (and optional ZWNJ already stripped)
-// - length >= 2
-// - not all same character
-// - has at least one non-alef consonant-ish variety for longer strings
+// ============ PERSIAN DICTIONARY (offline, ~240k words from Dehkhoda) ============
+const WORD_SET = new Set();
+let dictReady = false;
+try {
+  const dictWords = require('an-array-of-persian-words');
+  for (const raw of dictWords) {
+    const n = String(raw || '')
+      .trim()
+      .replace(/\u200c/g, '')
+      .replace(/ي/g, 'ی')
+      .replace(/ك/g, 'ک')
+      .replace(/ة/g, 'ه')
+      .replace(/[أإٱ]/g, 'ا');
+    if (n.length >= 2) WORD_SET.add(n);
+    const nospace = n.replace(/\s+/g, '');
+    if (nospace.length >= 2 && nospace !== n) WORD_SET.add(nospace);
+  }
+  dictReady = true;
+  console.log('Dictionary loaded: ' + WORD_SET.size + ' entries');
+} catch (e) {
+  console.warn('Dictionary package missing — heuristic only:', e.message);
+}
+
 function isPlausiblePersianWord(word) {
   const w = normalizeWord(word);
   if (w.length < 2) return false;
-  if (!/^[\u0600-\u06FF]+$/.test(w)) return false;
-  if (/^(.)\1+$/.test(w)) return false; // اااا / ببب
-  if (w.length === 2 && ALEF_SET.has(w[0]) && ALEF_SET.has(w[1])) return false;
+  if (!/^[\u0600-\u06FF\s]+$/.test(w)) return false;
+  if (/^(.)\1+$/.test(w.replace(/\s/g, ''))) return false;
   return true;
 }
+
+function inDictionary(word) {
+  const w = normalizeWord(word);
+  if (!w) return false;
+  if (WORD_SET.has(w)) return true;
+  const nospace = w.replace(/\s+/g, '');
+  if (nospace !== w && WORD_SET.has(nospace)) return true;
+  const parts = w.split(/\s+/).filter(Boolean);
+  if (parts.length > 1 && parts.every(p => WORD_SET.has(p))) return true;
+  return false;
+}
+
 function isValidAnswer(word, letter) {
   const w = normalizeWord(word);
   if (!w) return false;
   if (!startsWithLetter(w, letter)) return false;
   if (!isPlausiblePersianWord(w)) return false;
+  if (dictReady) return inDictionary(w);
   return true;
 }
+
 
 function calcAndShowResults(room) {
   clearRoundTimer(room);
