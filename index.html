@@ -259,8 +259,7 @@ background-attachment:fixed}
 <button class="btn bp" onclick="joinFromLink()">🚪 ورود به اتاق با همین اسم</button>
 </div>
 </div>
-<button type="button" class="install-btn" id="btn-install" onclick="triggerInstall()">📲 نصب اپلیکیشن</button>
-<div class="ver">v4.6</div>
+<div class="ver">v4.7</div>
 </div>
 
 <!-- HOME -->
@@ -272,7 +271,7 @@ background-attachment:fixed}
 <div class="profile-info">
 <div class="profile-name" id="profile-name">-</div>
 <div class="profile-email" id="profile-email"></div>
-<div class="profile-btns"><button onclick="showHistory()">📊 تاریخچه</button><button onclick="triggerInstall()" id="btn-install-home">📲 نصب</button><button onclick="doLogout()">🚪 خروج</button></div>
+<div class="profile-btns"><button onclick="showHistory()">📊 تاریخچه</button><button onclick="doLogout()">🚪 خروج</button></div>
 </div></div>
 <label class="fl">اسم شما</label>
 <input type="text" id="i-name" class="fi" placeholder="نام شما" maxlength="20" autocomplete="off"><br><br>
@@ -378,14 +377,30 @@ background-attachment:fixed}
 </div></div>
 
 
-<div id="install-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px">
-  <div class="card" style="max-width:360px;margin:0;text-align:center;position:relative">
-    <button type="button" onclick="dismissInstall()" style="position:absolute;left:12px;top:12px;border:none;background:rgba(255,255,255,.1);color:#fff;width:36px;height:36px;border-radius:10px;font-size:18px;cursor:pointer">✕</button>
-    <div style="font-size:48px;margin-bottom:8px">📲</div>
-    <h3 style="font-size:18px;font-weight:800;margin-bottom:8px">نصب اسم فامیل</h3>
-    <p style="font-size:13px;color:var(--tl);margin-bottom:18px;line-height:1.7">برای دسترسی سریع‌تر، اپ را روی گوشی یا سیستم نصب کن.</p>
-    <button type="button" class="btn bp" onclick="triggerInstall()">نصب اپلیکیشن</button>
-    <button type="button" class="btn bo" style="margin-top:8px" onclick="dismissInstall()">الان نه</button>
+
+<!-- PWA install banner (Ferdowsi-style) -->
+<div id="install-banner" style="display:none;position:fixed;left:50%;transform:translateX(-50%);z-index:900;width:min(400px,calc(100% - 28px));bottom:calc(24px + env(safe-area-inset-bottom,0px));pointer-events:none">
+  <div style="pointer-events:auto;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:18px;background:linear-gradient(160deg,rgba(255,255,255,.18) 0%,rgba(255,255,255,.06) 100%);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);border:1px solid rgba(255,255,255,.28);box-shadow:0 12px 40px rgba(0,0,0,.35),0 1px 0 rgba(255,255,255,.3) inset">
+    <span style="font-size:22px;flex-shrink:0">📲</span>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:13px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">نصب اسم فامیل</div>
+      <div id="install-banner-sub" style="font-size:10px;color:rgba(255,255,255,.55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">دسترسی سریع مثل اپلیکیشن</div>
+    </div>
+    <button type="button" onclick="triggerInstall()" style="flex-shrink:0;padding:8px 14px;border:none;border-radius:12px;background:rgba(56,189,248,.9);color:#fff;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit">نصب</button>
+    <button type="button" onclick="dismissInstall()" aria-label="بستن" style="flex-shrink:0;width:28px;height:28px;border:none;border-radius:50%;background:transparent;color:rgba(255,255,255,.5);font-size:16px;cursor:pointer;line-height:1">×</button>
+  </div>
+</div>
+
+<!-- iOS install guide modal -->
+<div id="ios-install-modal" style="display:none;position:fixed;inset:0;z-index:950;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);align-items:flex-end;justify-content:center;padding:16px" onclick="if(event.target===this)closeIosGuide()">
+  <div class="card" style="max-width:380px;width:100%;margin:0 0 max(16px,env(safe-area-inset-bottom));text-align:right" onclick="event.stopPropagation()">
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:12px;color:#fff">نصب روی آیفون / آیپد</h3>
+    <ol style="font-size:14px;color:var(--tl);line-height:1.9;padding-right:18px;margin:0 0 16px">
+      <li>دکمه <b style="color:#fff">Share</b> (مربع با فلش) پایین سافاری را بزن</li>
+      <li><b style="color:#fff">Add to Home Screen</b> / افزودن به صفحه اصلی را انتخاب کن</li>
+      <li>روی <b style="color:#fff">Add</b> بزن</li>
+    </ol>
+    <button type="button" class="btn bp" onclick="closeIosGuide()">متوجه شدم</button>
   </div>
 </div>
 
@@ -836,53 +851,68 @@ document.addEventListener("keypress",e=>{if(e.target.id==="chat-input"&&e.key===
 
 
 
-// === PWA INSTALL ===
+
+// === PWA INSTALL (Ferdowsi-style bottom banner) ===
 let deferredPrompt=null;
+
 function isAppInstalled(){
   if(window.matchMedia('(display-mode: standalone)').matches)return true;
   if(window.navigator.standalone===true)return true;
   return false;
 }
+function isIOSDevice(){
+  return /iphone|ipad|ipod/i.test(navigator.userAgent||'') ||
+    (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+}
 function dismissInstall(){
-  const m=$('install-modal');
+  const b=$('install-banner');
+  if(b)b.style.display='none';
+  try{sessionStorage.setItem('esm_install_dismissed','1');}catch(e){}
+}
+function closeIosGuide(){
+  const m=$('ios-install-modal');
   if(m)m.style.display='none';
-  try{localStorage.setItem('esm_install_dismissed',String(Date.now()));}catch(e){}
 }
-function maybeShowInstallPopup(){
+function showInstallBanner(){
   if(isAppInstalled())return;
-  // don't spam: once per 7 days if dismissed
-  try{
-    const d=parseInt(localStorage.getItem('esm_install_dismissed')||'0',10);
-    if(d && (Date.now()-d)<7*24*60*60*1000)return;
-  }catch(e){}
-  const m=$('install-modal');
-  if(m)m.style.display='flex';
+  try{if(sessionStorage.getItem('esm_install_dismissed')==='1')return;}catch(e){}
+  const b=$('install-banner');
+  if(!b)return;
+  const sub=$('install-banner-sub');
+  if(sub)sub.textContent=isIOSDevice()?'افزودن به صفحه اصلی آیفون':'دسترسی سریع مثل اپلیکیشن';
+  b.style.display='block';
 }
-window.addEventListener('beforeinstallprompt',(e)=>{
-  e.preventDefault();
-  deferredPrompt=e;
-  if(!isAppInstalled()){
-    setTimeout(maybeShowInstallPopup,2500);
-  }
-});
-window.addEventListener('appinstalled',()=>{
-  deferredPrompt=null;
-  dismissInstall();
-  toast('اپ نصب شد!');
-});
 async function triggerInstall(){
   if(deferredPrompt){
     deferredPrompt.prompt();
     try{await deferredPrompt.userChoice;}catch(e){}
     deferredPrompt=null;
     dismissInstall();
-  }else{
-    if(/iphone|ipad|ipod/i.test(navigator.userAgent))
-      toast('در Safari: Share → Add to Home Screen');
-    else
-      toast('از منوی مرورگر گزینه Install را بزن');
+    return;
   }
+  if(isIOSDevice()){
+    const m=$('ios-install-modal');
+    if(m)m.style.display='flex';
+    return;
+  }
+  toast('از منوی مرورگر گزینه Install را بزن');
 }
+window.addEventListener('beforeinstallprompt',(e)=>{
+  e.preventDefault();
+  deferredPrompt=e;
+  if(!isAppInstalled())setTimeout(showInstallBanner,1200);
+});
+window.addEventListener('appinstalled',()=>{
+  deferredPrompt=null;
+  dismissInstall();
+  toast('اپ نصب شد!');
+});
+// iOS has no beforeinstallprompt — show banner after short delay if not installed
+document.addEventListener('DOMContentLoaded',()=>{
+  if(isIOSDevice() && !isAppInstalled()){
+    setTimeout(showInstallBanner,2000);
+  }
+});
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
     navigator.serviceWorker.register('/sw.js').catch(()=>{
