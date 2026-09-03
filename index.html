@@ -253,7 +253,7 @@ background-attachment:fixed}
 <button class="btn bp" onclick="joinFromLink()">🚪 ورود به بازی</button>
 </div>
 </div>
-<div class="ver">v4.3 · sticky header · scoring fix</div>
+<div class="ver">v4.4 · dict at score time</div>
 </div>
 
 <!-- HOME -->
@@ -544,7 +544,13 @@ function normalizeWord(w){return String(w||'').trim().replace(/\u200c/g,'').repl
 function startsWithLetter(word,letter){const w=normalizeWord(word);if(!w||!letter)return false;const first=normalizeLetter(w[0]);const need=normalizeLetter(letter);if(need==='ا'||letter==='آ')return first==='ا'||w[0]==='آ'||ALEF_SET.has(w[0]);return first===need;}
 function isPlausiblePersianWord(word){const w=normalizeWord(word);if(w.length<2)return false;if(!/^[\u0600-\u06FF]+$/.test(w))return false;if(/^(.)\1+$/.test(w))return false;return true;}
 function isValidAnswer(word,letter){const w=normalizeWord(word);if(!w)return false;if(!startsWithLetter(w,letter))return false;if(!isPlausiblePersianWord(w))return false;return true;}
-function validateInputEl(inp){const v=inp.value.trim();const wrap=inp.closest('.ac');if(!v){inp.style.borderColor='';if(wrap)wrap.classList.remove('f','bad');return;}const ok=isValidAnswer(v,G.letter);if(ok){inp.style.borderColor='rgba(45,212,191,.6)';if(wrap){wrap.classList.add('f');wrap.classList.remove('bad');}}else{inp.style.borderColor='rgba(248,113,113,.7)';if(wrap){wrap.classList.add('bad');wrap.classList.remove('f');}}}
+function validateInputEl(inp){
+  const v=inp.value.trim();const wrap=inp.closest('.ac');
+  if(!v){inp.style.borderColor='';if(wrap)wrap.classList.remove('f','bad');return;}
+  // فقط پر بودن فیلد — اعتبارسنجی واقعی بعد از پایان دور سمت سرور
+  inp.style.borderColor='';
+  if(wrap){wrap.classList.add('f');wrap.classList.remove('bad');}
+}const ok=isValidAnswer(v,G.letter);if(ok){inp.style.borderColor='rgba(45,212,191,.6)';if(wrap){wrap.classList.add('f');wrap.classList.remove('bad');}}else{inp.style.borderColor='rgba(248,113,113,.7)';if(wrap){wrap.classList.add('bad');wrap.classList.remove('f');}}}
 
 // === SOCKET ===
 function connectSocket(){
@@ -672,7 +678,7 @@ function showOnlineGame(letter){
   G.timer=setInterval(()=>{G.tLeft--;$('t-txt').textContent=pn(G.tLeft);if(G.tLeft<=10)$('g-timer').classList.add('w');if(G.tLeft<=0){clearInterval(G.timer);submitAns();}},1000);
   setTimeout(()=>{const f=document.querySelector('.ai');if(f)f.focus();},300);checkAllFilled();
 }
-function checkAllFilled(){let filled=0,valid=0;const total=O.categories.length;document.querySelectorAll(".ai").forEach(inp=>{const v=inp.value.trim();if(v){filled++;if(isValidAnswer(v,G.letter))valid++;}});$("g-prog").style.width=(filled/total*100)+"%";$("b-sub").disabled=(filled<total);if(filled>=total){const inv=filled-valid;$("b-sub").textContent=inv>0?("ثبت ("+pn(inv)+" نامعتبر)"):"ثبت جواب‌ها ✓";}else $("b-sub").textContent=pn(filled)+" از "+pn(total)+" پر شده";}
+function checkAllFilled(){let filled=0;const total=O.categories.length;document.querySelectorAll(".ai").forEach(inp=>{if(inp.value.trim())filled++;});$("g-prog").style.width=(filled/total*100)+"%";$("b-sub").disabled=(filled<total);if(filled>=total)$("b-sub").textContent="ثبت جواب‌ها ✓";else $("b-sub").textContent=pn(filled)+" از "+pn(total)+" پر شده";}
 function submitAns(){
   if(O.submitted)return;O.submitted=true;clearInterval(G.timer);
   const ans={};O.categories.forEach(c=>{const inp=document.getElementById('a_'+c.id);ans[c.id]=inp?inp.value.trim():'';});
