@@ -360,3 +360,118 @@ body {
 .conn-bar.ok { background: #047857; color: #fff; }
 
 .ver { text-align: center; font-size: 11px; color: var(--tl); margin-top: 16px; }
+
+
+/* === v5.1 liquid glass + locked header + share/chat === */
+body {
+  background:
+    radial-gradient(ellipse 90% 70% at 15% 5%, rgba(124, 58, 237, 0.4), transparent 55%),
+    radial-gradient(ellipse 80% 60% at 90% 95%, rgba(56, 189, 248, 0.28), transparent 50%),
+    radial-gradient(ellipse 50% 40% at 50% 50%, rgba(236, 72, 153, 0.12), transparent 60%),
+    #070b16 !important;
+  background-attachment: fixed;
+}
+.glass {
+  background: linear-gradient(155deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.06) 45%, rgba(255,255,255,0.04) 100%) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  border: 1px solid rgba(255,255,255,0.28) !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.35) !important;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeScale { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pop { 0% { transform: scale(0.6); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes confettiFall { 0% { transform: translateY(-10vh) rotate(0); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+@keyframes reactionFloat { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-80px) scale(1.4); opacity: 0; } }
+.screen.on { animation: fadeIn 0.35s ease both; }
+.logo { animation: floaty 3s ease-in-out infinite, pop 0.5s ease both; }
+.card { animation: fadeScale 0.4s ease both; }
+.player-row, .ans-card, .rank-row { animation: slideUp 0.35s ease both; }
+.btn-primary {
+  background: linear-gradient(135deg, #8b5cf6 0%, #2563eb 50%, #06b6d4 100%) !important;
+  box-shadow: 0 10px 28px rgba(124, 58, 237, 0.4) !important;
+}
+.btn:active { transform: scale(0.97); }
+
+/* LOCKED HEADER — parent never scrolls */
+.game-screen {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+.game-header {
+  flex: 0 0 auto !important;
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  z-index: 100 !important;
+  background: linear-gradient(180deg, rgba(7,11,22,0.98), rgba(10,14,28,0.94)) !important;
+  backdrop-filter: blur(30px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(180%) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.2) !important;
+}
+.game-progress { flex: 0 0 auto !important; }
+.game-body {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain !important;
+}
+.game-footer {
+  flex: 0 0 auto !important;
+  position: relative !important;
+  z-index: 100 !important;
+  background: linear-gradient(0deg, rgba(7,11,22,0.98), rgba(10,14,28,0.94)) !important;
+  backdrop-filter: blur(24px) !important;
+}
+.g-letter {
+  background: linear-gradient(135deg, #8b5cf6, #2563eb, #06b6d4) !important;
+  animation: pop 0.4s ease both;
+}
+
+.share-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+.share-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 12px 6px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.08); color: #fff; font-size: 11px; font-weight: 700;
+  cursor: pointer; font-family: inherit; transition: transform 0.15s;
+}
+.share-btn:active { transform: scale(0.95); }
+.share-btn span.ic { font-size: 22px; }
+.share-btn.wa { background: rgba(37,211,102,0.22); border-color: rgba(37,211,102,0.45); }
+.share-btn.tg { background: rgba(38,165,228,0.22); border-color: rgba(38,165,228,0.45); }
+.share-btn.ig { background: rgba(225,48,108,0.22); border-color: rgba(225,48,108,0.45); }
+.share-btn.more { background: rgba(167,139,250,0.22); border-color: rgba(167,139,250,0.45); }
+
+.reaction-bar { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 12px 0; }
+.reaction-btn {
+  width: 44px; height: 44px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.1); font-size: 22px; cursor: pointer;
+}
+.reaction-btn:active { transform: scale(1.2); }
+.reaction-float {
+  position: fixed; z-index: 1800; font-size: 28px; pointer-events: none;
+  animation: reactionFloat 1.2s ease-out forwards;
+}
+.chat-box { margin-top: 12px; padding: 12px; border-radius: 16px; display: flex; flex-direction: column; }
+.chat-messages { overflow-y: auto; min-height: 50px; max-height: 120px; margin-bottom: 8px; font-size: 13px; }
+.chat-msg { margin-bottom: 6px; padding: 6px 10px; border-radius: 10px; background: rgba(255,255,255,0.06); animation: fadeIn 0.25s ease; }
+.chat-msg b { color: #a78bfa; margin-left: 4px; }
+.chat-input-row { display: flex; gap: 8px; }
+.chat-input-row .input { flex: 1; }
+.edit-panel { margin-top: 12px; padding: 14px; animation: fadeScale 0.3s ease; }
+.edit-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.edit-row input { width: 80px; text-align: center; }
+.confetti-piece {
+  position: fixed; top: -10px; z-index: 1700; pointer-events: none; font-size: 20px;
+  animation: confettiFall linear forwards;
+}

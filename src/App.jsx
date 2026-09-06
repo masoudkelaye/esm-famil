@@ -52,6 +52,10 @@ export default function App() {
   const [progress, setProgress] = useState({ submitted: 0, total: 0 });
   const [showInstall, setShowInstall] = useState(false);
   const [shareLink, setShareLink] = useState('');
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [editMode, setEditMode] = useState(false);
+  const [editScores, setEditScores] = useState({});
 
   const socketRef = useRef(null);
   const timerRef = useRef(null);
@@ -117,6 +121,7 @@ export default function App() {
     setHistory(h);
 
     setScreen(SCREENS.FINAL);
+    try { setTimeout(() => spawnConfetti(), 100); } catch(e) {}
   }, []);
 
   // Socket setup — once
@@ -225,18 +230,32 @@ export default function App() {
     });
 
     sk.on('ready_update', (d) => setReadyPlayers(d.readyPlayers || {}));
-    sk.on('scores_updated', (d) => {
-      setTotalScores(d.totalScores || {});
-      toast('امتیازها به‌روز شد');
-    });
+    
 
     sk.on('game_finished', (d) => {
       clearInterval(timerRef.current);
       goFinal(d || {});
     });
 
-    sk.on('chat_message', () => {});
-    sk.on('reaction_received', () => {});
+    sk.on('chat_message', (d) => {
+      setChatMessages((prev) => [...prev.slice(-40), { name: d.playerName, message: d.message, t: Date.now() }]);
+    });
+    sk.on('reaction_received', (d) => {
+      // floating emoji
+      const el = document.createElement('div');
+      el.className = 'reaction-float';
+      el.textContent = d.emoji || '👍';
+      el.style.left = (20 + Math.random() * 60) + 'vw';
+      el.style.bottom = '20vh';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1300);
+      toast((d.playerName || '') + ' ' + (d.emoji || ''));
+    });
+    sk.on('scores_updated', (d) => {
+      setTotalScores(d.totalScores || {});
+      setEditMode(false);
+      toast('امتیازها ویرایش شد');
+    });
 
     function onNewRound(d, isFirst) {
       clearInterval(timerRef.current);
@@ -249,6 +268,8 @@ export default function App() {
       answersRef.current = {};
       setSubmitted(false);
       setProgress({ submitted: 0, total: 0 });
+      setChatMessages([]);
+      setEditMode(false);
       setScreen(SCREENS.GAME);
       startTimer(d.timePerRound);
     }
@@ -467,6 +488,81 @@ export default function App() {
     return ids.sort((a, b) => (totalScores[b] || 0) - (totalScores[a] || 0));
   }, [players, totalScores]);
 
+
+  const shareText = () => {
+    const link = shareLink || `${location.origin}${location.pathname}?room=${roomCode}`;
+    return `🎮 بیا اسم فامیل بازی کنیم!\nکد اتاق: ${roomCode}\n${link}`;
+  };
+  const shareWhatsApp = () => {
+    window.open('https://wa.me/?text=' + encodeURIComponent(shareText()), '_blank');
+  };
+  const shareTelegram = () => {
+    const link = shareLink || `${location.origin}${location.pathname}?room=${roomCode}`;
+    window.open('https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent('🎮 بیا اسم فامیل بازی کنیم! کد: ' + roomCode), '_blank');
+  };
+  const shareInstagram = async () => {
+    const t = shareText();
+    try {
+      await navigator.clipboard.writeText(t);
+      toast('کپی شد! در اینستاگرام استوری یا دایرکت بچسبان');
+    } catch {
+      toast('متن را کپی کن و در اینستاگرام بفرست');
+    }
+  };
+  const shareMore = async () => {
+    const link = shareLink || `${location.origin}${location.pathname}?room=${roomCode}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'اسم فامیل', text: '🎮 بیا اسم فامیل بازی کنیم! کد: ' + roomCode, url: link });
+      } catch (e) {}
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareText());
+        toast('لینک کپی شد!');
+      } catch {
+        toast(link);
+      }
+    }
+  };
+  const sendReaction = (emoji) => {
+    if (!socketRef.current || !roomCode) return;
+    socketRef.current.emit('send_reaction', { roomCode, emoji });
+  };
+  const sendChat = () => {
+    const msg = chatInput.trim();
+    if (!msg || !socketRef.current) return;
+    socketRef.current.emit('chat_message', { roomCode, message: msg });
+    setChatInput('');
+  };
+  const openEditScores = () => {
+    const init = {};
+    sortedIds.forEach((pid) => {
+      const rs = (displayResults[pid] && displayResults[pid].total) || 0;
+      init[pid] = rs;
+    });
+    setEditScores(init);
+    setEditMode(true);
+  };
+  const saveEditScores = () => {
+    if (!socketRef.current || !isHost) return;
+    socketRef.current.emit('edit_scores', { roomCode, editedScores: editScores });
+    setEditMode(false);
+  };
+  const spawnConfetti = () => {
+    const em = ['🎉','🎊','⭐','🌟','✨','🏆','🎮','💜'];
+    for (let i = 0; i < 28; i++) {
+      setTimeout(() => {
+        const el = document.createElement('div');
+        el.className = 'confetti-piece';
+        el.textContent = em[Math.floor(Math.random() * em.length)];
+        el.style.left = Math.random() * 100 + 'vw';
+        el.style.animationDuration = (2 + Math.random() * 3) + 's';
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 5000);
+      }, i * 50);
+    }
+  };
+
   /* ---------- RENDER ---------- */
   return (
     <>
@@ -510,7 +606,7 @@ export default function App() {
               </>
             )}
           </div>
-          <div className="ver">v5.0 · React</div>
+          <div className="ver">v5.1 · React · Glass</div>
         </div>
       </div>
 
@@ -630,20 +726,16 @@ export default function App() {
             </div>
           )}
 
-          {shareLink && (
+          {(shareLink || roomCode) && (
             <div className="glass" style={{ padding: 14, marginTop: 12 }}>
-              <div style={{ fontSize: 12, color: 'var(--tl)', marginBottom: 6 }}>لینک دعوت</div>
-              <input className="input" readOnly value={shareLink} onFocus={(e) => e.target.select()} />
-              <button
-                className="btn btn-ghost"
-                style={{ marginTop: 8 }}
-                onClick={() => {
-                  navigator.clipboard?.writeText(shareLink);
-                  toast('کپی شد!');
-                }}
-              >
-                کپی لینک
-              </button>
+              <div style={{ fontSize: 12, color: 'var(--tl)', marginBottom: 6 }}>اشتراک‌گذاری اتاق</div>
+              <input className="input" readOnly value={shareLink || roomCode} onFocus={(e) => e.target.select()} />
+              <div className="share-row">
+                <button type="button" className="share-btn wa" onClick={shareWhatsApp}><span className="ic">💬</span>واتساپ</button>
+                <button type="button" className="share-btn tg" onClick={shareTelegram}><span className="ic">✈️</span>تلگرام</button>
+                <button type="button" className="share-btn ig" onClick={shareInstagram}><span className="ic">📷</span>اینستا</button>
+                <button type="button" className="share-btn more" onClick={shareMore}><span className="ic">🔗</span>بیشتر</button>
+              </div>
             </div>
           )}
         </div>
@@ -793,6 +885,62 @@ export default function App() {
             </table>
           </div>
         </div>
+
+          <div className="reaction-bar">
+            {['👍','❤️','😂','🔥','👏','😮'].map((e) => (
+              <button key={e} type="button" className="reaction-btn" onClick={() => sendReaction(e)}>{e}</button>
+            ))}
+          </div>
+
+          <div className="chat-box glass">
+            <div style={{ fontWeight: 800, fontSize: 13, marginBottom: 6 }}>💬 چت</div>
+            <div className="chat-messages">
+              {chatMessages.length === 0 && (
+                <div style={{ color: 'var(--tl)', fontSize: 12 }}>پیامی نیست — اولین نفر باش!</div>
+              )}
+              {chatMessages.map((m, i) => (
+                <div className="chat-msg" key={i}><b>{m.name}</b>{m.message}</div>
+              ))}
+            </div>
+            <div className="chat-input-row">
+              <input
+                className="input"
+                value={chatInput}
+                placeholder="پیام..."
+                maxLength={200}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && sendChat()}
+              />
+              <button type="button" className="btn btn-primary btn-sm" style={{ width: 'auto' }} onClick={sendChat}>ارسال</button>
+            </div>
+          </div>
+
+          {isHost && (
+            <div style={{ marginTop: 12 }}>
+              {!editMode ? (
+                <button className="btn btn-ghost" onClick={openEditScores}>✏️ ویرایش امتیازات این دور</button>
+              ) : (
+                <div className="edit-panel glass">
+                  <div style={{ fontWeight: 800, marginBottom: 10 }}>ویرایش امتیاز دور</div>
+                  {sortedIds.map((pid) => (
+                    <div className="edit-row" key={pid}>
+                      <span>{(players[pid] && players[pid].name) || 'بازیکن'}</span>
+                      <input
+                        className="input"
+                        type="number"
+                        min={0}
+                        value={editScores[pid] ?? 0}
+                        onChange={(e) => setEditScores((s) => ({ ...s, [pid]: parseInt(e.target.value) || 0 }))}
+                      />
+                    </div>
+                  ))}
+                  <button className="btn btn-primary" style={{ marginTop: 8 }} onClick={saveEditScores}>ذخیره امتیازها</button>
+                  <button className="btn btn-ghost" style={{ marginTop: 6 }} onClick={() => setEditMode(false)}>انصراف</button>
+                </div>
+              )}
+            </div>
+          )}
+
         <div className="footer-bar">
           {round < maxRounds ? (
             <>
