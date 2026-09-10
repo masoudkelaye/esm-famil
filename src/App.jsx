@@ -177,11 +177,14 @@ export default function App() {
       setTimePerRound(d.timePerRound || 90);
       setLetter(d.currentLetter || '');
       if (d.state === 'playing') {
-        // restore mid-round
+        // restore mid-round — compute actual remaining time, don't just restart the clock
         setSubmitted(false);
         setAnswers({});
         setScreen(SCREENS.GAME);
-        startTimer(d.timePerRound || 90);
+        const total = d.timePerRound || 90;
+        const elapsed = d.roundStartedAt ? Math.floor((Date.now() - d.roundStartedAt) / 1000) : 0;
+        const remaining = Math.max(5, total - Math.max(0, elapsed));
+        startTimer(remaining);
       } else if (d.state === 'waiting_next') {
         setScreen(SCREENS.RESULTS);
       } else if (d.state === 'finished') {
@@ -234,6 +237,7 @@ export default function App() {
 
     sk.on('game_finished', (d) => {
       clearInterval(timerRef.current);
+      if (screenRef.current === SCREENS.FINAL) return; // already handled
       goFinal(d || {});
     });
 
@@ -307,7 +311,7 @@ export default function App() {
           })
         );
       } catch (e) {}
-      sk.emit('submit_answers', { roomCode: roomRef.current, answers: ans });
+      sk.emit('submit_answers', { roomCode: roomRef.current, answers: ans, round: roundRef.current });
       setScreen(SCREENS.WAIT);
     }
 
@@ -425,15 +429,19 @@ export default function App() {
     if (!isHost) return;
     const last = round >= maxRounds;
     socketRef.current.emit('next_round', { roomCode });
-    if (last) {
-      clearTimeout(finFallbackRef.current);
+    clearTimeout(finFallbackRef.current);
+    finFallbackRef.current = setTimeout(() => {
+      if (screenRef.current !== SCREENS.RESULTS) return; // already moved on normally
+      // retry once — safe even if the first click did land, the server ignores
+      // next_round once the round has already advanced
+      socketRef.current.emit('next_round', { roomCode });
       finFallbackRef.current = setTimeout(() => {
-        if (screenRef.current !== SCREENS.FINAL) {
+        if (screenRef.current === SCREENS.RESULTS && last) {
           toast('نمایش نتیجه نهایی...');
           goFinal({ totalScores: totalScoresRef.current, players: playersRef.current, lastResults: results });
         }
       }, 2500);
-    }
+    }, 2500);
   };
 
   const sendReady = () => {
